@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Http;
 
 class AiSetting extends Model
 {
@@ -70,17 +72,75 @@ class AiSetting extends Model
                 'mistral-medium-latest' => 'Mistral Medium',
                 'open-mixtral-8x22b' => 'Mixtral 8x22B',
             ],
-            'openrouter' => [
-                'openrouter/auto' => 'Auto (Best Available)',
-                'anthropic/claude-3.5-sonnet' => 'Claude 3.5 Sonnet',
-                'anthropic/claude-3-opus' => 'Claude 3 Opus',
-                'openai/gpt-4o' => 'GPT-4o',
-                'openai/gpt-4o-mini' => 'GPT-4o Mini',
-                'google/gemini-pro-1.5' => 'Gemini 1.5 Pro',
-                'meta-llama/llama-3.3-70b-instruct' => 'Llama 3.3 70B',
-                'deepseek/deepseek-chat' => 'DeepSeek Chat',
-                'mistralai/mistral-large' => 'Mistral Large',
-            ],
+            'openrouter' => self::getOpenRouterModels(),
         ];
+    }
+
+    public static function getOpenRouterModels(): array
+    {
+        return Cache::remember('openrouter_models', now()->addHours(6), function () {
+            try {
+                $response = Http::timeout(10)->get('https://openrouter.ai/api/v1/models');
+
+                if (! $response->successful()) {
+                    return self::getDefaultOpenRouterModels();
+                }
+
+                $data = $response->json();
+                $models = $data['data'] ?? [];
+
+                $freeModels = [];
+                $paidModels = [];
+
+                foreach ($models as $model) {
+                    $id = $model['id'] ?? null;
+                    $name = $model['name'] ?? $id;
+                    $pricing = $model['pricing'] ?? [];
+
+                    if (! $id) {
+                        continue;
+                    }
+
+                    $promptPrice = $pricing['prompt'] ?? '0';
+                    $isFree = $promptPrice === '0' || $promptPrice === 0;
+
+                    $displayName = $isFree ? "🆓 {$name}" : $name;
+
+                    if ($isFree) {
+                        $freeModels[$id] = $displayName;
+                    } else {
+                        $paidModels[$id] = $name;
+                    }
+                }
+
+                // Sort alphabetically within each group
+                asort($freeModels);
+                asort($paidModels);
+
+                // Add auto at the beginning of paid models
+                $paidModels = ['openrouter/auto' => '⚡ Auto (Best Available)'] + $paidModels;
+
+                return array_merge($freeModels, $paidModels);
+            } catch (\Exception $e) {
+                return self::getDefaultOpenRouterModels();
+            }
+        });
+    }
+
+    protected static function getDefaultOpenRouterModels(): array
+    {
+        return [
+            'openrouter/auto' => '⚡ Auto (Best Available)',
+            'anthropic/claude-3.5-sonnet' => 'Claude 3.5 Sonnet',
+            'openai/gpt-4o' => 'GPT-4o',
+            'openai/gpt-4o-mini' => 'GPT-4o Mini',
+            'google/gemini-pro-1.5' => 'Gemini 1.5 Pro',
+            'meta-llama/llama-3.3-70b-instruct' => 'Llama 3.3 70B',
+        ];
+    }
+
+    public static function clearOpenRouterCache(): void
+    {
+        Cache::forget('openrouter_models');
     }
 }
