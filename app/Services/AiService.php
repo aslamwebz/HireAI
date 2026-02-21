@@ -11,9 +11,13 @@ use Illuminate\Support\Facades\Log;
 class AiService
 {
     protected User $user;
+
     protected ?AiSetting $settings;
+
     protected string $provider;
+
     protected string $model;
+
     protected ?string $apiKey;
 
     public function __construct(User $user)
@@ -32,15 +36,17 @@ class AiService
 
     public function testConnection(): bool
     {
-        if (!$this->apiKey) {
+        if (! $this->apiKey) {
             return false;
         }
 
         try {
             $response = $this->sendRequest('Say "OK" if you can read this.');
+
             return str_contains(strtolower($response), 'ok');
         } catch (\Exception $e) {
             Log::error('AI connection test failed', ['error' => $e->getMessage()]);
+
             return false;
         }
     }
@@ -56,6 +62,7 @@ class AiService
     public function generateCoverLetter(string $cvContent, string $jobDescription, string $tone): string
     {
         $prompt = $this->buildCoverLetterPrompt($cvContent, $jobDescription, $tone);
+
         return $this->sendRequest($prompt);
     }
 
@@ -87,12 +94,12 @@ class AiService
                 ->post($endpoint, $body);
 
             if ($response->failed()) {
-                throw new \Exception('AI request failed: ' . $response->body());
+                throw new \Exception('AI request failed: '.$response->body());
             }
 
             return $this->extractContent($response->json());
         } catch (ConnectionException $e) {
-            throw new \Exception('Connection to AI provider failed: ' . $e->getMessage());
+            throw new \Exception('Connection to AI provider failed: '.$e->getMessage());
         }
     }
 
@@ -101,9 +108,10 @@ class AiService
         return match ($this->provider) {
             'openai' => 'https://api.openai.com/v1/chat/completions',
             'anthropic' => 'https://api.anthropic.com/v1/messages',
-            'gemini' => "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent",
+            'gemini' => "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}",
             'groq' => 'https://api.groq.com/openai/v1/chat/completions',
             'mistral' => 'https://api.mistral.ai/v1/chat/completions',
+            'openrouter' => 'https://openrouter.ai/api/v1/chat/completions',
             default => 'https://api.groq.com/openai/v1/chat/completions',
         };
     }
@@ -122,6 +130,12 @@ class AiService
             ],
             'gemini' => [
                 'Content-Type' => 'application/json',
+            ],
+            'openrouter' => [
+                'Authorization' => "Bearer {$this->apiKey}",
+                'Content-Type' => 'application/json',
+                'HTTP-Referer' => config('app.url'),
+                'X-Title' => config('app.name'),
             ],
             default => [
                 'Authorization' => "Bearer {$this->apiKey}",
@@ -345,6 +359,7 @@ PROMPT;
                     return [];
                 }
             }
+
             return [];
         }
     }

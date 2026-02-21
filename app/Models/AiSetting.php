@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Crypt;
 class AiSetting extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'user_id',
         'provider',
@@ -68,6 +69,17 @@ class AiSetting extends Model
                 'mistral-large-latest' => 'Mistral Large',
                 'mistral-medium-latest' => 'Mistral Medium',
                 'open-mixtral-8x22b' => 'Mixtral 8x22B',
+            ],
+            'openrouter' => [
+                'openrouter/auto' => 'Auto (Best Available)',
+                'anthropic/claude-3.5-sonnet' => 'Claude 3.5 Sonnet',
+                'anthropic/claude-3-opus' => 'Claude 3 Opus',
+                'openai/gpt-4o' => 'GPT-4o',
+                'openai/gpt-4o-mini' => 'GPT-4o Mini',
+                'google/gemini-pro-1.5' => 'Gemini 1.5 Pro',
+                'meta-llama/llama-3.3-70b-instruct' => 'Llama 3.3 70B',
+                'deepseek/deepseek-chat' => 'DeepSeek Chat',
+                'mistralai/mistral-large' => 'Mistral Large',
             ],
         ];
     }

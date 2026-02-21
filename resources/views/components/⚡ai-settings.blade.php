@@ -21,6 +21,7 @@ new class extends Component
         $setting = auth()->user()->aiSetting;
         $this->providers = [
             'groq' => 'Groq (Free)',
+            'openrouter' => 'OpenRouter',
             'openai' => 'OpenAI',
             'anthropic' => 'Anthropic',
             'gemini' => 'Google Gemini',
@@ -177,6 +178,10 @@ new class extends Component
             <div class="flex gap-3">
                 <span class="text-violet-400 font-medium">Groq (Free):</span>
                 <a href="https://console.groq.com/keys" target="_blank" class="text-violet-400 hover:underline">console.groq.com/keys</a>
+            </div>
+            <div class="flex gap-3">
+                <span class="text-violet-400 font-medium">OpenRouter:</span>
+                <a href="https://openrouter.ai/keys" target="_blank" class="text-violet-400 hover:underline">openrouter.ai/keys</a>
             </div>
             <div class="flex gap-3">
                 <span class="text-violet-400 font-medium">OpenAI:</span>
