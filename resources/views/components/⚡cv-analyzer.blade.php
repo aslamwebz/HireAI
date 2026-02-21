@@ -113,8 +113,8 @@ new class extends Component
         }
 
         $this->validate([
-            'cvContent' => 'required|string|min:50',
-            'jobDescription' => 'required|string|min:50',
+            'cvContent' => 'required|string',
+            'jobDescription' => 'required|string',
         ]);
 
         $this->status = 'creating';

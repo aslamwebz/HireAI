@@ -41,7 +41,7 @@ new class extends Component
     public function generate(): void
     {
         $this->validate([
-            'jobDescription' => 'required|string|min:50',
+            'jobDescription' => 'required|string',
             'focusArea' => 'required|string',
         ]);
 
