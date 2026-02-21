@@ -129,7 +129,7 @@ new class extends Component
             <flux:field>
                 <flux:label>AI Provider</flux:label>
                 <flux:description>Select your preferred AI provider</flux:description>
-                <flux:select wire:model="provider" wire:change="updatedProvider">
+                <flux:select wire:model.live="provider">
                     @foreach($providers as $key => $name)
                         <flux:select.option value="{{ $key }}">{{ $name }}</flux:select.option>
                     @endforeach
