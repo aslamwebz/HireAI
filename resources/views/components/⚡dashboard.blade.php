@@ -1,0 +1,252 @@
+<?php
+
+use App\Models\CvAnalysis;
+use App\Models\JobApplication;
+use Livewire\Component;
+
+new class extends Component
+{
+    public int $totalApplications = 0;
+    public int $wishlistCount = 0;
+    public int $appliedCount = 0;
+    public int $interviewCount = 0;
+    public int $offerCount = 0;
+    public int $rejectedCount = 0;
+    public int $analysesCount = 0;
+    public int $analysesUsed = 0;
+    public int $analysesLimit = 5;
+    public bool $isPro = false;
+
+    public function mount(): void
+    {
+        $user = auth()->user();
+        
+        $this->totalApplications = $user->jobApplications()->count();
+        $this->wishlistCount = $user->jobApplications()->where('status', 'wishlist')->count();
+        $this->appliedCount = $user->jobApplications()->where('status', 'applied')->count();
+        $this->interviewCount = $user->jobApplications()->where('status', 'interview')->count();
+        $this->offerCount = $user->jobApplications()->where('status', 'offer')->count();
+        $this->rejectedCount = $user->jobApplications()->where('status', 'rejected')->count();
+        
+        $this->analysesCount = $user->cvAnalyses()->where('status', 'completed')->count();
+        $this->analysesUsed = $user->getAnalysisUsage();
+        $this->analysesLimit = $user->getAnalysisLimit();
+        $this->isPro = $user->isPro();
+    }
+
+    public function getRecentJobsProperty()
+    {
+        return auth()->user()->jobApplications()
+            ->orderBy('updated_at', 'desc')
+            ->take(5)
+            ->get();
+    }
+
+    public function getRecentAnalysesProperty()
+    {
+        return auth()->user()->cvAnalyses()
+            ->where('status', 'completed')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+    }
+};
+?>
+
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+            <p class="text-zinc-400">Welcome back, {{ auth()->user()->name }}</p>
+        </div>
+        @if(!$isPro)
+            <flux:button href="{{ route('pricing') }}" variant="primary" icon="sparkles">
+                Upgrade to Pro
+            </flux:button>
+        @endif
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-card p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <flux:icon name="briefcase" class="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ $totalApplications }}</p>
+                    <p class="text-xs text-zinc-400">Total Jobs</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <flux:icon name="clock" class="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ $interviewCount }}</p>
+                    <p class="text-xs text-zinc-400">In Interview</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <flux:icon name="check-circle" class="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ $offerCount }}</p>
+                    <p class="text-xs text-zinc-400">Offers</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                    <flux:icon name="document-text" class="w-5 h-5 text-violet-400" />
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-white">{{ $analysesCount }}</p>
+                    <p class="text-xs text-zinc-400">CV Analyses</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+        <div class="glass-card">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-white">Application Pipeline</h2>
+                <flux:button href="{{ route('jobs.index') }}" size="sm" variant="subtle">
+                    View All
+                </flux:button>
+            </div>
+            <div class="space-y-3">
+                @foreach([
+                    ['status' => 'wishlist', 'count' => $wishlistCount, 'color' => 'gray'],
+                    ['status' => 'applied', 'count' => $appliedCount, 'color' => 'blue'],
+                    ['status' => 'interview', 'count' => $interviewCount, 'color' => 'amber'],
+                    ['status' => 'offer', 'count' => $offerCount, 'color' => 'green'],
+                    ['status' => 'rejected', 'count' => $rejectedCount, 'color' => 'red'],
+                ] as $item)
+                    <div class="flex items-center justify-between">
+                        <span class="text-zinc-400 capitalize">{{ $item['status'] }}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                                @if($totalApplications > 0)
+                                    <div class="h-full bg-{{ $item['color'] }}-500 rounded-full" style="width: {{ ($item['count'] / $totalApplications) * 100 }}%"></div>
+                                @endif
+                            </div>
+                            <span class="text-sm text-white w-8 text-right">{{ $item['count'] }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-white">AI Usage</h2>
+                @if(!$isPro)
+                    <span class="text-sm text-zinc-400">{{ $analysesUsed }}/{{ $analysesLimit }} analyses</span>
+                @else
+                    <span class="text-sm text-violet-400">Unlimited</span>
+                @endif
+            </div>
+            <div class="space-y-4">
+                @if(!$isPro)
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-zinc-400">CV Analyses</span>
+                            <span class="text-white">{{ $analysesUsed }} / {{ $analysesLimit }}</span>
+                        </div>
+                        <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-500" style="width: {{ ($analysesUsed / $analysesLimit) * 100 }}%"></div>
+                        </div>
+                    </div>
+                    @if($analysesUsed >= $analysesLimit)
+                        <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                            <p class="text-sm text-amber-400">You've reached your monthly limit. Upgrade to Pro for unlimited analyses.</p>
+                        </div>
+                    @endif
+                @else
+                    <div class="p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg text-center">
+                        <flux:icon name="sparkles" class="w-8 h-8 text-violet-400 mx-auto mb-2" />
+                        <p class="text-violet-400 font-medium">Pro Plan Active</p>
+                        <p class="text-sm text-zinc-400">Unlimited AI analyses</p>
+                    </div>
+                @endif
+
+                <div class="pt-4 border-t border-white/10">
+                    <p class="text-sm text-zinc-400 mb-2">Quick Actions</p>
+                    <div class="flex flex-wrap gap-2">
+                        <flux:button href="{{ route('cv-analyzer') }}" size="sm" variant="subtle">
+                            Analyze CV
+                        </flux:button>
+                        <flux:button href="{{ route('cover-letter') }}" size="sm" variant="subtle">
+                            Cover Letter
+                        </flux:button>
+                        <flux:button href="{{ route('interview-prep') }}" size="sm" variant="subtle">
+                            Interview Prep
+                        </flux:button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+        <div class="glass-card">
+            <h2 class="text-lg font-semibold text-white mb-4">Recent Jobs</h2>
+            <div class="space-y-3">
+                @forelse($this->recentJobs as $job)
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div>
+                            <p class="text-white font-medium">{{ $job->position }}</p>
+                            <p class="text-sm text-zinc-400">{{ $job->company }}</p>
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full bg-{{ $job->getStatusColor() }}-500/20 text-{{ $job->getStatusColor() }}-400 capitalize">
+                            {{ $job->status }}
+                        </span>
+                    </div>
+                @empty
+                    <p class="text-zinc-400 text-center py-4">No job applications yet</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2 class="text-lg font-semibold text-white mb-4">Recent CV Analyses</h2>
+            <div class="space-y-3">
+                @forelse($this->recentAnalyses as $analysis)
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white font-medium truncate">{{ Str::limit($analysis->job_description, 50) }}</p>
+                            <p class="text-sm text-zinc-400">{{ $analysis->created_at->diffForHumans() }}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="score-circle w-12 h-12 relative" data-score="{{ $analysis->match_score }}">
+                                <svg class="w-12 h-12 transform -rotate-90">
+                                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" class="text-zinc-700" />
+                                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" 
+                                        class="{{ $analysis->getMatchScoreColor() === 'green' ? 'text-green-500' : ($analysis->getMatchScoreColor() === 'amber' ? 'text-amber-500' : 'text-red-500') }}"
+                                        stroke-dasharray="{{ 2 * 3.14159 * 20 }}"
+                                        stroke-dashoffset="{{ 2 * 3.14159 * 20 * (1 - $analysis->match_score / 100) }}"
+                                        stroke-linecap="round" />
+                                </svg>
+                                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                                    {{ $analysis->match_score }}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-zinc-400 text-center py-4">No CV analyses yet</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
