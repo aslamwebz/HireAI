@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Filament\Admin\Resources\JobApplications;
+
+use App\Filament\Admin\Resources\JobApplications\Pages\CreateJobApplication;
+use App\Filament\Admin\Resources\JobApplications\Pages\EditJobApplication;
+use App\Filament\Admin\Resources\JobApplications\Pages\ListJobApplications;
+use App\Filament\Admin\Resources\JobApplications\Schemas\JobApplicationForm;
+use App\Filament\Admin\Resources\JobApplications\Tables\JobApplicationsTable;
+use App\Models\JobApplication;
+use BackedEnum;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class JobApplicationResource extends Resource
+{
+    protected static ?string $model = JobApplication::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
+    public static function form(Schema $schema): Schema
+    {
+        return JobApplicationForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return JobApplicationsTable::configure($table);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListJobApplications::route('/'),
+            'create' => CreateJobApplication::route('/create'),
+            'edit' => EditJobApplication::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        return parent::getRecordRouteBindingEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+}
