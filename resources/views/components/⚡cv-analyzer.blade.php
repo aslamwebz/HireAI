@@ -2,11 +2,14 @@
 
 use App\Jobs\ProcessCvAnalysis;
 use App\Models\CvAnalysis;
-use App\Models\UsageRecord;
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use Livewire\Attributes\Validate;
 
 new class extends Component
 {
+    use WithFileUploads;
+
     public string $cvContent = '';
     public string $jobDescription = '';
     public ?int $selectedJobId = null;
@@ -16,12 +19,73 @@ new class extends Component
     public int $analysesUsed = 0;
     public int $analysesLimit = 5;
 
+    #[Validate('file|mimes:pdf,doc,docx,txt|max:10240')]
+    public $cvFile = null;
+
+    public bool $uploadMode = false;
+
     public function mount(): void
     {
         $user = auth()->user();
         $this->canAnalyze = $user->canAnalyze();
         $this->analysesUsed = $user->getAnalysisUsage();
         $this->analysesLimit = $user->getAnalysisLimit();
+    }
+
+    public function updatedCvFile(): void
+    {
+        if ($this->cvFile) {
+            $this->cvContent = $this->extractTextFromFile($this->cvFile);
+        }
+    }
+
+    protected function extractTextFromFile($file): string
+    {
+        $extension = strtolower($file->extension());
+        $path = $file->getRealPath();
+
+        if ($extension === 'txt') {
+            return file_get_contents($path) ?: '';
+        }
+
+        if ($extension === 'pdf') {
+            if (class_exists(\Smalot\PdfParser\Parser::class)) {
+                try {
+                    $parser = new \Smalot\PdfParser\Parser();
+                    $pdf = $parser->parseFile($path);
+                    return $pdf->getText() ?: '';
+                } catch (\Exception) {
+                    return '';
+                }
+            }
+            return '';
+        }
+
+        if (in_array($extension, ['doc', 'docx'])) {
+            if (class_exists(\PhpOffice\PhpWord\IOFactory::class)) {
+                try {
+                    $phpWord = \PhpOffice\PhpWord\IOFactory::load($path);
+                    $text = '';
+                    foreach ($phpWord->getSections() as $section) {
+                        foreach ($section->getElements() as $element) {
+                            if (method_exists($element, 'getElements')) {
+                                foreach ($element->getElements() as $textElement) {
+                                    if (method_exists($textElement, 'getText')) {
+                                        $text .= $textElement->getText() . ' ';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return trim($text);
+                } catch (\Exception) {
+                    return '';
+                }
+            }
+            return '';
+        }
+
+        return '';
     }
 
     public function getRecentJobsProperty()
@@ -94,6 +158,7 @@ new class extends Component
     {
         $this->analysis = null;
         $this->status = 'idle';
+        $this->cvFile = null;
     }
 
     public function getRecentAnalysesProperty()
@@ -110,6 +175,12 @@ new class extends Component
         $analysis = auth()->user()->cvAnalyses()->findOrFail($id);
         $this->analysis = $analysis;
         $this->status = 'completed';
+    }
+
+    public function toggleUploadMode(): void
+    {
+        $this->uploadMode = !$this->uploadMode;
+        $this->cvFile = null;
     }
 };
 ?>
@@ -138,16 +209,67 @@ new class extends Component
     @if($status === 'idle' || $status === 'creating')
         <div class="grid lg:grid-cols-2 gap-6">
             <div class="glass-card">
-                <h2 class="text-lg font-semibold text-white mb-4">Your CV</h2>
-                <flux:field>
-                    <flux:textarea
-                        wire:model="cvContent"
-                        placeholder="Paste your CV content here..."
-                        rows="12"
-                        class="font-mono text-sm"
-                    />
-                    <flux:error name="cvContent" />
-                </flux:field>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white">Your CV</h2>
+                    <div class="flex gap-1">
+                        <flux:button 
+                            wire:click="$set('uploadMode', false)" 
+                            size="xs" 
+                            variant="{{ !$uploadMode ? 'primary' : 'subtle' }}"
+                        >
+                            Paste
+                        </flux:button>
+                        <flux:button 
+                            wire:click="$set('uploadMode', true)" 
+                            size="xs" 
+                            variant="{{ $uploadMode ? 'primary' : 'subtle' }}"
+                        >
+                            Upload
+                        </flux:button>
+                    </div>
+                </div>
+
+                @if($uploadMode)
+                    <div class="space-y-4">
+                        <div 
+                            class="border-2 border-dashed border-white/20 rounded-lg p-8 text-center hover:border-violet-500/50 transition"
+                            wire:ignore
+                            x-data="{ dragging: false }"
+                            @dragover.prevent="dragging = true"
+                            @dragleave.prevent="dragging = false"
+                            @drop.prevent="dragging = false"
+                            :class="{ 'border-violet-500 bg-violet-500/10': dragging }"
+                        >
+                            <flux:icon name="cloud-arrow-up" class="w-12 h-12 mx-auto text-zinc-500 mb-3" />
+                            <p class="text-zinc-400 mb-2">Drag & drop your CV or click to browse</p>
+                            <p class="text-xs text-zinc-500">PDF, DOC, DOCX, TXT (max 10MB)</p>
+                            <input 
+                                type="file" 
+                                wire:model="cvFile" 
+                                accept=".pdf,.doc,.docx,.txt"
+                                class="mt-4 block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-violet-600 file:text-white hover:file:bg-violet-500 file:cursor-pointer"
+                            >
+                        </div>
+
+                        @if($cvFile)
+                            <div class="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                                <flux:icon name="document-text" class="w-5 h-5 text-green-400" />
+                                <span class="text-sm text-green-400">{{ $cvFile->getClientOriginalName() }}</span>
+                                <flux:button wire:click="$set('cvFile', null)" size="xs" variant="subtle" icon="x-mark" class="ml-auto" />
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    <flux:field>
+                        <flux:textarea
+                            wire:model="cvContent"
+                            placeholder="Paste your CV content here..."
+                            rows="12"
+                            class="font-mono text-sm"
+                        />
+                        <flux:error name="cvContent" />
+                    </flux:field>
+                @endif
             </div>
 
             <div class="space-y-6">
@@ -236,7 +358,7 @@ new class extends Component
                 Check Status
             </flux:button>
             <script>
-                setTimeout(() => { Livewire.dispatch('pollAnalysis'); }, 3000);
+                setTimeout(function() { Livewire.dispatch('pollAnalysis'); }, 3000);
             </script>
         </div>
     @endif
