@@ -27,20 +27,31 @@ class AiService
         $this->user = $user;
         $this->settings = $user->aiSetting;
 
-        $globalProvider = config('services.ai.provider');
-        $globalApiKey = config('services.ai.api_key');
-        $globalModel = config('services.ai.model');
+        $this->provider = $this->settings?->provider ?? 'openrouter';
+        $this->model = $this->settings?->model ?? $this->getDefaultModel($this->provider);
 
-        if ($globalApiKey) {
-            $this->provider = $globalProvider ?? 'openrouter';
-            $this->apiKey = $globalApiKey;
-            $this->model = $globalModel ?? $this->getDefaultModel($this->provider);
-            $this->usingGlobalConfig = true;
-        } else {
-            $this->provider = $this->settings?->provider ?? 'openrouter';
-            $this->model = $this->settings?->model ?? $this->getDefaultModel($this->provider);
-            $this->apiKey = $this->settings?->api_key;
+        // Check user's API key first, then fall back to env
+        $this->apiKey = $this->settings?->api_key;
+
+        if (! $this->apiKey) {
+            $this->apiKey = $this->getEnvApiKey($this->provider);
+            if ($this->apiKey) {
+                $this->usingGlobalConfig = true;
+            }
         }
+    }
+
+    protected function getEnvApiKey(string $provider): ?string
+    {
+        return match ($provider) {
+            'openrouter' => env('OPENROUTER_API_KEY'),
+            'groq' => env('GROQ_API_KEY'),
+            'openai' => env('OPENAI_API_KEY'),
+            'anthropic' => env('ANTHROPIC_API_KEY'),
+            'gemini' => env('GEMINI_API_KEY'),
+            'mistral' => env('MISTRAL_API_KEY'),
+            default => null,
+        };
     }
 
     protected function getDefaultModel(string $provider): string
@@ -58,7 +69,7 @@ class AiService
 
     public function isConfigured(): bool
     {
-        if ($this->usingGlobalConfig) {
+        if ($this->apiKey) {
             return true;
         }
 
