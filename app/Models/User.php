@@ -18,6 +18,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
         'plan',
         'stripe_id',
         'pm_type',
@@ -103,5 +104,31 @@ class User extends Authenticatable
     public function canAnalyze(): bool
     {
         return UsageRecord::canUse($this, 'cv_analysis', 5);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
+    }
+
+    public static function getRoles(): array
+    {
+        return [
+            'admin' => 'Admin',
+            'user' => 'User',
+        ];
+    }
+
+    public static function getPlans(): array
+    {
+        return [
+            'free' => 'Free',
+            'pro' => 'Pro',
+        ];
     }
 }
