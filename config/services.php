@@ -42,4 +42,10 @@ return [
         'pro_price_id' => env('STRIPE_PRO_PRICE_ID'),
     ],
 
+    'ai' => [
+        'provider' => env('AI_PROVIDER', 'openrouter'),
+        'api_key' => env('AI_API_KEY'),
+        'model' => env('AI_MODEL'),
+    ],
+
 ];

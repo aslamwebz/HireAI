@@ -20,18 +20,54 @@ class AiService
 
     protected ?string $apiKey;
 
+    protected bool $usingGlobalConfig = false;
+
     public function __construct(User $user)
     {
         $this->user = $user;
         $this->settings = $user->aiSetting;
-        $this->provider = $this->settings?->provider ?? 'groq';
-        $this->model = $this->settings?->model ?? 'llama-3.3-70b-versatile';
-        $this->apiKey = $this->settings?->api_key;
+
+        $globalProvider = config('services.ai.provider');
+        $globalApiKey = config('services.ai.api_key');
+        $globalModel = config('services.ai.model');
+
+        if ($globalApiKey) {
+            $this->provider = $globalProvider ?? 'openrouter';
+            $this->apiKey = $globalApiKey;
+            $this->model = $globalModel ?? $this->getDefaultModel($this->provider);
+            $this->usingGlobalConfig = true;
+        } else {
+            $this->provider = $this->settings?->provider ?? 'openrouter';
+            $this->model = $this->settings?->model ?? $this->getDefaultModel($this->provider);
+            $this->apiKey = $this->settings?->api_key;
+        }
+    }
+
+    protected function getDefaultModel(string $provider): string
+    {
+        return match ($provider) {
+            'openrouter' => 'openrouter/auto',
+            'groq' => 'llama-3.3-70b-versatile',
+            'openai' => 'gpt-4o-mini',
+            'anthropic' => 'claude-3-5-sonnet-20241022',
+            'gemini' => 'gemini-1.5-flash',
+            'mistral' => 'mistral-large-latest',
+            default => 'openrouter/auto',
+        };
     }
 
     public function isConfigured(): bool
     {
+        if ($this->usingGlobalConfig) {
+            return true;
+        }
+
         return $this->settings?->is_configured ?? false;
+    }
+
+    public function isUsingGlobalConfig(): bool
+    {
+        return $this->usingGlobalConfig;
     }
 
     public function testConnection(): bool
