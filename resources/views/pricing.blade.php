@@ -1,5 +1,11 @@
 <x-layouts::app.sidebar :title="__('Pricing')">
     <div class="max-w-4xl mx-auto space-y-8">
+        @if(session('status'))
+            <flux:callout color="violet">
+                {{ session('status') }}
+            </flux:callout>
+        @endif
+
         <div class="text-center">
             <h1 class="text-3xl font-bold text-white mb-2">Upgrade to Pro</h1>
             <p class="text-zinc-400">Unlock unlimited AI-powered job search tools</p>
@@ -30,13 +36,13 @@
                     </li>
                 </ul>
                 
-                @if(auth()->user()->isPro())
+                @if(!auth()->user()->isPro())
                     <flux:button variant="subtle" class="w-full" disabled>
                         Current Plan
                     </flux:button>
                 @else
                     <flux:button variant="subtle" class="w-full" disabled>
-                        Current Plan
+                        Free Plan
                     </flux:button>
                 @endif
             </div>
@@ -76,10 +82,21 @@
                     <flux:button variant="primary" class="w-full" disabled>
                         Pro Plan Active
                     </flux:button>
+                    <div class="mt-4 text-center">
+                        <form method="POST" action="{{ route('subscription.billing') }}">
+                            @csrf
+                            <flux:button type="submit" variant="subtle" size="sm">
+                                Manage Subscription
+                            </flux:button>
+                        </form>
+                    </div>
                 @else
-                    <flux:button variant="primary" class="w-full">
-                        Upgrade to Pro
-                    </flux:button>
+                    <form method="POST" action="{{ route('subscription.checkout') }}">
+                        @csrf
+                        <flux:button type="submit" variant="primary" class="w-full">
+                            Upgrade to Pro
+                        </flux:button>
+                    </form>
                 @endif
             </div>
         </div>
