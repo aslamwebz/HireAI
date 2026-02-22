@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Models\AiSetting;
 use App\Models\User;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Facades\Prism;
 
 class AiService
 {
@@ -14,11 +14,9 @@ class AiService
 
     protected ?AiSetting $settings;
 
-    protected string $provider;
+    protected Provider $provider;
 
     protected string $model;
-
-    protected ?string $apiKey;
 
     protected bool $usingGlobalConfig = false;
 
@@ -27,30 +25,24 @@ class AiService
         $this->user = $user;
         $this->settings = $user->aiSetting;
 
-        $this->provider = $this->settings?->provider ?? 'openrouter';
-        $this->model = $this->settings?->model ?? $this->getDefaultModel($this->provider);
+        $providerName = $this->settings?->provider ?? 'openrouter';
+        $this->provider = $this->mapProvider($providerName);
+        $this->model = $this->settings?->model ?? $this->getDefaultModel($providerName);
 
-        // Check user's API key first, then fall back to env
-        $this->apiKey = $this->settings?->api_key;
-
-        if (! $this->apiKey) {
-            $this->apiKey = $this->getEnvApiKey($this->provider);
-            if ($this->apiKey) {
-                $this->usingGlobalConfig = true;
-            }
-        }
+        $this->usingGlobalConfig = ! $this->settings?->api_key;
     }
 
-    protected function getEnvApiKey(string $provider): ?string
+    protected function mapProvider(string $provider): Provider
     {
         return match ($provider) {
-            'openrouter' => config('services.openrouter.api_key'),
-            'groq' => config('services.groq.api_key'),
-            'openai' => config('services.openai.api_key'),
-            'anthropic' => config('services.anthropic.api_key'),
-            'gemini' => config('services.gemini.api_key'),
-            'mistral' => config('services.mistral.api_key'),
-            default => null,
+            'openrouter' => Provider::OpenRouter,
+            'groq' => Provider::Groq,
+            'openai' => Provider::OpenAI,
+            'anthropic' => Provider::Anthropic,
+            'gemini' => Provider::Gemini,
+            'mistral' => Provider::Mistral,
+            'ollama' => Provider::Ollama,
+            default => Provider::OpenRouter,
         };
     }
 
@@ -63,17 +55,16 @@ class AiService
             'anthropic' => 'claude-3-5-sonnet-20241022',
             'gemini' => 'gemini-1.5-flash',
             'mistral' => 'mistral-large-latest',
+            'ollama' => 'llama3.2',
             default => 'openrouter/auto',
         };
     }
 
     public function isConfigured(): bool
     {
-        if ($this->apiKey) {
-            return true;
-        }
+        $provider = $this->settings?->provider ?? 'openrouter';
 
-        return $this->settings?->is_configured ?? false;
+        return ! empty(config("ai.providers.{$provider}.key"));
     }
 
     public function isUsingGlobalConfig(): bool
@@ -83,10 +74,6 @@ class AiService
 
     public function testConnection(): bool
     {
-        if (! $this->apiKey) {
-            return false;
-        }
-
         try {
             $response = $this->sendRequest('Say "OK" if you can read this.');
 
@@ -131,112 +118,19 @@ class AiService
 
     protected function sendRequest(string $prompt): string
     {
-        $endpoint = $this->getEndpoint();
-        $headers = $this->getHeaders();
-        $body = $this->buildRequestBody($prompt);
+        $response = Prism::text()
+            ->using($this->provider, $this->model)
+            ->withSystemPrompt('You are an expert career coach and hiring consultant. Provide detailed, actionable advice.')
+            ->withPrompt($prompt)
+            ->asText();
 
-        try {
-            $response = Http::withHeaders($headers)
-                ->timeout(120)
-                ->post($endpoint, $body);
-
-            if ($response->failed()) {
-                throw new \Exception('AI request failed: '.$response->body());
-            }
-
-            return $this->extractContent($response->json());
-        } catch (ConnectionException $e) {
-            throw new \Exception('Connection to AI provider failed: '.$e->getMessage());
-        }
-    }
-
-    protected function getEndpoint(): string
-    {
-        return match ($this->provider) {
-            'openai' => 'https://api.openai.com/v1/chat/completions',
-            'anthropic' => 'https://api.anthropic.com/v1/messages',
-            'gemini' => "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}",
-            'groq' => 'https://api.groq.com/openai/v1/chat/completions',
-            'mistral' => 'https://api.mistral.ai/v1/chat/completions',
-            'openrouter' => 'https://openrouter.ai/api/v1/chat/completions',
-            default => 'https://api.groq.com/openai/v1/chat/completions',
-        };
-    }
-
-    protected function getHeaders(): array
-    {
-        $headers = match ($this->provider) {
-            'openai', 'groq', 'mistral' => [
-                'Authorization' => "Bearer {$this->apiKey}",
-                'Content-Type' => 'application/json',
-            ],
-            'anthropic' => [
-                'x-api-key' => $this->apiKey,
-                'anthropic-version' => '2023-06-01',
-                'Content-Type' => 'application/json',
-            ],
-            'gemini' => [
-                'Content-Type' => 'application/json',
-            ],
-            'openrouter' => [
-                'Authorization' => "Bearer {$this->apiKey}",
-                'Content-Type' => 'application/json',
-                'HTTP-Referer' => config('app.url'),
-                'X-Title' => config('app.name'),
-            ],
-            default => [
-                'Authorization' => "Bearer {$this->apiKey}",
-                'Content-Type' => 'application/json',
-            ],
-        };
-
-        return $headers;
-    }
-
-    protected function buildRequestBody(string $prompt): array
-    {
-        if ($this->provider === 'gemini') {
-            return [
-                'contents' => [
-                    ['parts' => [['text' => $prompt]]],
-                ],
-            ];
-        }
-
-        if ($this->provider === 'anthropic') {
-            return [
-                'model' => $this->model,
-                'max_tokens' => 4096,
-                'messages' => [
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-            ];
-        }
-
-        return [
-            'model' => $this->model,
-            'messages' => [
-                ['role' => 'system', 'content' => 'You are an expert career coach and hiring consultant. Provide detailed, actionable advice.'],
-                ['role' => 'user', 'content' => $prompt],
-            ],
-            'temperature' => 0.7,
-            'max_tokens' => 4096,
-        ];
-    }
-
-    protected function extractContent(array $response): string
-    {
-        return match ($this->provider) {
-            'anthropic' => $response['content'][0]['text'] ?? '',
-            'gemini' => $response['candidates'][0]['content']['parts'][0]['text'] ?? '',
-            default => $response['choices'][0]['message']['content'] ?? '',
-        };
+        return $response->text;
     }
 
     protected function buildCvAnalysisPrompt(string $cvContent, string $jobDescription): string
     {
         return <<<PROMPT
-You are an expert ATS (Applicant Tracking System) and career consultant. Analyze the following CV against the job description.
+Analyze the following CV against the job description.
 
 **CV Content:**
 {$cvContent}
@@ -258,7 +152,7 @@ Provide your analysis in the following JSON format (return ONLY valid JSON, no m
     "full_analysis": "A detailed 2-3 paragraph analysis of the CV fit for this role"
 }
 
-Be specific and actionable in your feedback. The match_score should reflect how well the candidate's experience matches the job requirements. The ats_score should reflect how well the CV is optimized for ATS systems.
+Be specific and actionable. Match score reflects experience alignment. ATS score reflects optimization for systems.
 PROMPT;
     }
 
@@ -298,15 +192,15 @@ Write a cover letter in a {$toneInstructions} tone based on the following CV and
 {$jobDescription}
 
 Requirements:
-1. Address the letter to "Dear Hiring Manager" unless you can infer a specific name
-2. Open with a compelling hook that shows genuine interest
+1. Address to "Dear Hiring Manager"
+2. Open with a compelling hook
 3. Match 2-3 key experiences from the CV to the job requirements
-4. Include specific achievements with measurable results where possible
+4. Include specific achievements with measurable results
 5. Close with a confident call to action
-6. Keep it to 3-4 paragraphs
-7. Do not include placeholders like [Your Name] - use first person
+6. Keep to 3-4 paragraphs
+7. Use first person, no placeholders
 
-Return ONLY the cover letter text, no additional commentary.
+Return ONLY the cover letter text.
 PROMPT;
     }
 
@@ -329,16 +223,15 @@ Generate 10 interview questions for a candidate applying for this job. {$focusCo
 {$jobDescription}
 {$cvContext}
 
-Return the questions in this JSON format (return ONLY valid JSON, no markdown):
+Return in this JSON format (return ONLY valid JSON):
 {
     "questions": [
         "Question 1?",
-        "Question 2?",
-        ...
+        "Question 2?"
     ]
 }
 
-Make questions specific to the role and company based on the job description. Include a mix of question types appropriate for the focus area.
+Make questions specific to the role.
 PROMPT;
     }
 
@@ -352,7 +245,7 @@ PROMPT;
     protected function buildScoreAnswerPrompt(string $question, string $answer, string $jobDescription): string
     {
         return <<<PROMPT
-You are an expert interview coach. Evaluate this interview answer.
+Evaluate this interview answer.
 
 **Job Context:**
 {$jobDescription}
@@ -363,18 +256,14 @@ You are an expert interview coach. Evaluate this interview answer.
 **Candidate's Answer:**
 {$answer}
 
-Provide your evaluation in this JSON format (return ONLY valid JSON, no markdown):
+Provide evaluation in this JSON format (return ONLY valid JSON):
 {
     "score": <number 0-100>,
     "feedback": "Specific feedback on what was good and what could be improved",
-    "model_answer": "An example of an excellent answer to this question"
+    "model_answer": "An example of an excellent answer"
 }
 
-Score based on:
-- Relevance to the question (25%)
-- Clarity and structure (25%)
-- Use of specific examples/evidence (25%)
-- Connection to job requirements (25%)
+Score based on: Relevance (25%), Clarity (25%), Specific examples (25%), Job connection (25%)
 PROMPT;
     }
 

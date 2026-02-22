@@ -42,28 +42,4 @@ return [
         'pro_price_id' => env('STRIPE_PRO_PRICE_ID'),
     ],
 
-    'openrouter' => [
-        'api_key' => env('OPENROUTER_API_KEY'),
-    ],
-
-    'groq' => [
-        'api_key' => env('GROQ_API_KEY'),
-    ],
-
-    'openai' => [
-        'api_key' => env('OPENAI_API_KEY'),
-    ],
-
-    'anthropic' => [
-        'api_key' => env('ANTHROPIC_API_KEY'),
-    ],
-
-    'gemini' => [
-        'api_key' => env('GEMINI_API_KEY'),
-    ],
-
-    'mistral' => [
-        'api_key' => env('MISTRAL_API_KEY'),
-    ],
-
 ];

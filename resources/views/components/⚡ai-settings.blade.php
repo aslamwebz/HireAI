@@ -29,12 +29,12 @@ new class extends Component
         ];
 
         $this->globalKeys = [
-            'openrouter' => !empty(config('services.openrouter.api_key')),
-            'groq' => !empty(config('services.groq.api_key')),
-            'openai' => !empty(config('services.openai.api_key')),
-            'anthropic' => !empty(config('services.anthropic.api_key')),
-            'gemini' => !empty(config('services.gemini.api_key')),
-            'mistral' => !empty(config('services.mistral.api_key')),
+            'openrouter' => !empty(config('ai.providers.openrouter.key')),
+            'groq' => !empty(config('ai.providers.groq.key')),
+            'openai' => !empty(config('ai.providers.openai.key')),
+            'anthropic' => !empty(config('ai.providers.anthropic.key')),
+            'gemini' => !empty(config('ai.providers.gemini.key')),
+            'mistral' => !empty(config('ai.providers.mistral.key')),
         ];
 
         $aiService = new AiService(auth()->user());
