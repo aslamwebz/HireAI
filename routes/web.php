@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CvAnalysisController;
 use App\Http\Controllers\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('ai-settings', 'ai-settings')->name('ai-settings');
     Route::view('cvs', 'cvs')->name('cvs.index');
     Route::view('cv-analyzer', 'cv-analyzer')->name('cv-analyzer');
+    Route::get('cv-analysis/{cvAnalysis}', [CvAnalysisController::class, 'show'])->name('cv-analysis.show');
+    Route::delete('cv-analysis/{cvAnalysis}', [CvAnalysisController::class, 'destroy'])->name('cv-analysis.destroy');
     Route::view('cover-letter', 'cover-letter')->name('cover-letter');
     Route::view('jobs', 'jobs')->name('jobs.index');
     Route::view('interview-prep', 'interview-prep')->name('interview-prep');

@@ -100,43 +100,22 @@ new class extends Component
             'status' => 'pending',
         ]);
 
-        // Run synchronously for immediate feedback
         ProcessCvAnalysis::dispatchSync($analysis);
 
-        $this->analysis = $analysis->fresh();
-        $this->status = $this->analysis->status === 'completed' ? 'completed' : 'failed';
-        
-        if ($this->status === 'completed') {
-            $user = auth()->user();
-            $this->analysesUsed = $user->getAnalysisUsage();
-            $this->canAnalyze = $user->canAnalyze();
-        }
-    }
+        $analysis = $analysis->fresh();
 
-    public function pollAnalysis(): void
-    {
-        if (!$this->analysis) {
-            return;
-        }
-
-        $this->analysis->refresh();
-
-        if ($this->analysis->status === 'completed') {
-            $this->status = 'completed';
-            $user = auth()->user();
-            $this->analysesUsed = $user->getAnalysisUsage();
-            $this->canAnalyze = $user->canAnalyze();
-        } elseif ($this->analysis->status === 'failed') {
-            $this->status = 'failed';
+        if ($analysis->status === 'completed') {
+            $this->redirect(route('cv-analysis.show', $analysis));
         } else {
-            $this->status = 'processing';
+            $this->analysis = $analysis;
+            $this->status = 'failed';
         }
     }
 
-    public function resetAnalysis(): void
+    public function loadAnalysis($id): void
     {
-        $this->analysis = null;
-        $this->status = 'idle';
+        $analysis = auth()->user()->cvAnalyses()->findOrFail($id);
+        $this->redirect(route('cv-analysis.show', $analysis));
     }
 
     public function getRecentAnalysesProperty()
@@ -146,13 +125,6 @@ new class extends Component
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
-    }
-
-    public function loadAnalysis($id): void
-    {
-        $analysis = auth()->user()->cvAnalyses()->findOrFail($id);
-        $this->analysis = $analysis;
-        $this->status = 'completed';
     }
 };
 ?>
@@ -442,342 +414,29 @@ new class extends Component
         @endif
     @endif
 
-    @if($status === 'processing')
-        <div class="glass-card text-center py-12" wire:poll.3s="pollAnalysis">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-500/20 mb-4 animate-pulse">
-                <flux:icon name="sparkles" class="w-8 h-8 text-violet-400" />
+    @if($status === 'creating')
+        <div class="glass-card text-center py-16">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-violet-500/20 mb-6 animate-pulse">
+                <flux:icon name="sparkles" class="w-10 h-10 text-violet-400" />
             </div>
-            <h2 class="text-xl font-semibold text-white mb-2">Analyzing Your CV...</h2>
+            <h2 class="text-2xl font-semibold text-white mb-3">Analyzing Your CV...</h2>
             <p class="text-zinc-400 mb-6">This usually takes 10-30 seconds</p>
-            <div class="flex justify-center gap-1">
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+            <div class="flex justify-center gap-2">
+                <div class="w-3 h-3 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                <div class="w-3 h-3 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                <div class="w-3 h-3 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
             </div>
-            <p class="text-xs text-zinc-500 mt-4">Auto-refreshing...</p>
-        </div>
-    @endif
-
-    @if($status === 'completed' && $analysis)
-        <div class="space-y-8">
-            <div class="flex items-center justify-between">
-                <flux:button wire:click="resetAnalysis" variant="subtle" icon="arrow-left">
-                    New Analysis
-                </flux:button>
-                <span class="text-sm text-zinc-500">Analyzed {{ $analysis->created_at->format('M d, Y g:i A') }}</span>
-            </div>
-
-            <div class="glass-card relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-purple-500 to-blue-500"></div>
-                <div class="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl"></div>
-                <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
-                
-                <div class="relative">
-                    <div class="flex items-center justify-between mb-8">
-                        <div>
-                            <h2 class="text-2xl font-bold text-white flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                                    <flux:icon name="document-check" class="w-6 h-6 text-white" />
-                                </div>
-                                CV Analysis Report
-                            </h2>
-                            <p class="text-zinc-400 mt-1">Comprehensive analysis of your CV against the job requirements</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="px-3 py-1 bg-green-500/10 text-green-400 text-xs font-medium rounded-full flex items-center gap-1">
-                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                Completed
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="grid md:grid-cols-3 gap-6 mb-8">
-                        <div class="relative group">
-                            <div class="absolute inset-0 bg-gradient-to-br from-green-500/20 to-green-500/5 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition"></div>
-                            <div class="relative p-6 bg-zinc-900/80 rounded-2xl border border-green-500/30 text-center">
-                                <div class="score-circle w-28 h-28 mx-auto relative mb-4">
-                                    <svg class="w-28 h-28 transform -rotate-90">
-                                        <circle cx="56" cy="56" r="48" stroke="currentColor" stroke-width="5" fill="none" class="text-zinc-800" />
-                                        <circle cx="56" cy="56" r="48" stroke="currentColor" stroke-width="5" fill="none"
-                                            class="{{ $analysis->match_score >= 80 ? 'text-green-500' : ($analysis->match_score >= 50 ? 'text-amber-500' : 'text-red-500') }}"
-                                            stroke-dasharray="{{ 2 * 3.14159 * 48 }}"
-                                            stroke-dashoffset="{{ 2 * 3.14159 * 48 * (1 - $analysis->match_score / 100) }}"
-                                            stroke-linecap="round"
-                                            style="transition: stroke-dashoffset 1s ease-out" />
-                                    </svg>
-                                    <span class="absolute inset-0 flex items-center justify-center text-3xl font-bold text-white">
-                                        {{ $analysis->match_score }}
-                                    </span>
-                                </div>
-                                <p class="text-sm font-medium text-white">Match Score</p>
-                                <p class="text-xs text-zinc-500">CV-Job Alignment</p>
-                            </div>
-                        </div>
-
-                        <div class="relative group">
-                            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-blue-500/5 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition"></div>
-                            <div class="relative p-6 bg-zinc-900/80 rounded-2xl border border-blue-500/30 text-center">
-                                <div class="score-circle w-28 h-28 mx-auto relative mb-4">
-                                    <svg class="w-28 h-28 transform -rotate-90">
-                                        <circle cx="56" cy="56" r="48" stroke="currentColor" stroke-width="5" fill="none" class="text-zinc-800" />
-                                        <circle cx="56" cy="56" r="48" stroke="currentColor" stroke-width="5" fill="none"
-                                            class="{{ $analysis->ats_score >= 80 ? 'text-green-500' : ($analysis->ats_score >= 50 ? 'text-amber-500' : 'text-red-500') }}"
-                                            stroke-dasharray="{{ 2 * 3.14159 * 48 }}"
-                                            stroke-dashoffset="{{ 2 * 3.14159 * 48 * (1 - $analysis->ats_score / 100) }}"
-                                            stroke-linecap="round"
-                                            style="transition: stroke-dashoffset 1s ease-out" />
-                                    </svg>
-                                    <span class="absolute inset-0 flex items-center justify-center text-3xl font-bold text-white">
-                                        {{ $analysis->ats_score }}
-                                    </span>
-                                </div>
-                                <p class="text-sm font-medium text-white">ATS Score</p>
-                                <p class="text-xs text-zinc-500">System Compatibility</p>
-                            </div>
-                        </div>
-
-                        <div class="relative group">
-                            <div class="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-violet-500/5 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition"></div>
-                            <div class="relative p-6 bg-zinc-900/80 rounded-2xl border border-violet-500/30">
-                                <div class="text-center mb-4">
-                                    <p class="text-4xl font-bold text-white">
-                                        {{ ($analysis->strengths ? count($analysis->strengths) : 0) + ($analysis->improvements ? count($analysis->improvements) : 0) }}
-                                    </p>
-                                    <p class="text-xs text-zinc-500">Total Insights</p>
-                                </div>
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs text-green-400 flex items-center gap-1">
-                                            <flux:icon name="check-circle" class="w-3 h-3" />
-                                            Strengths
-                                        </span>
-                                        <span class="text-xs text-white">{{ $analysis->strengths ? count($analysis->strengths) : 0 }}</span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs text-amber-400 flex items-center gap-1">
-                                            <flux:icon name="light-bulb" class="w-3 h-3" />
-                                            Tips
-                                        </span>
-                                        <span class="text-xs text-white">{{ $analysis->improvements ? count($analysis->improvements) : 0 }}</span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs text-red-400 flex items-center gap-1">
-                                            <flux:icon name="magnifying-glass" class="w-3 h-3" />
-                                            Keywords
-                                        </span>
-                                        <span class="text-xs text-white">{{ $analysis->missing_keywords ? count($analysis->missing_keywords) : 0 }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div class="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span class="text-sm font-medium text-white">Content Quality</span>
-                            </div>
-                            <div class="h-2 bg-zinc-700 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" style="width: {{ min(100, $analysis->match_score + 10) }}%"></div>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <span class="text-sm font-medium text-white">Format Score</span>
-                            </div>
-                            <div class="h-2 bg-zinc-700 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" style="width: {{ $analysis->ats_score }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @if($analysis->full_analysis)
-                <div class="glass-card relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl"></div>
-                    <div class="relative">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-semibold text-white flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                                    <flux:icon name="cpu-chip" class="w-5 h-5 text-white" />
-                                </div>
-                                AI Summary
-                            </h3>
-                            <span class="px-3 py-1 bg-violet-500/10 text-violet-400 text-xs font-medium rounded-full">
-                                <flux:icon name="sparkles" class="w-3 h-3 inline mr-1" />
-                                Generated
-                            </span>
-                        </div>
-                        
-                        <div class="p-6 bg-gradient-to-br from-zinc-900/80 to-zinc-800/50 rounded-xl border border-violet-500/20">
-                            <p class="text-zinc-300 leading-relaxed text-base">{{ Str::limit($analysis->full_analysis, 500) }}</p>
-                            @if(strlen($analysis->full_analysis) > 500)
-                                <p class="text-zinc-500 text-sm mt-3">... view details in sections below</p>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <div class="grid md:grid-cols-2 gap-6">
-                @if($analysis->strengths && count($analysis->strengths) > 0)
-                    <div class="glass-card border-green-500/20">
-                        <h3 class="text-lg font-semibold text-green-400 mb-2 flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-                                <flux:icon name="check-circle" class="w-4 h-4" />
-                            </div>
-                            Your Strengths
-                            <span class="ml-auto text-xs text-zinc-500 font-normal bg-zinc-800 px-2 py-1 rounded-full">{{ count($analysis->strengths) }} items</span>
-                        </h3>
-                        <p class="text-sm text-zinc-500 mb-4">Key strengths that align with the job requirements</p>
-                        <ul class="space-y-3">
-                            @foreach($analysis->strengths as $index => $strength)
-                                <li class="flex items-start gap-3 p-4 bg-gradient-to-r from-green-500/10 to-transparent rounded-lg border-l-2 border-green-500">
-                                    <span class="flex items-center justify-center w-6 h-6 bg-green-500/20 text-green-400 text-xs font-bold rounded-full flex-shrink-0">
-                                        {{ $index + 1 }}
-                                    </span>
-                                    <span class="text-zinc-300 leading-relaxed">{{ $strength }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                @if($analysis->weaknesses && count($analysis->weaknesses) > 0)
-                    <div class="glass-card border-amber-500/20">
-                        <h3 class="text-lg font-semibold text-amber-400 mb-2 flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                                <flux:icon name="exclamation-triangle" class="w-4 h-4" />
-                            </div>
-                            Areas to Improve
-                            <span class="ml-auto text-xs text-zinc-500 font-normal bg-zinc-800 px-2 py-1 rounded-full">{{ count($analysis->weaknesses) }} items</span>
-                        </h3>
-                        <p class="text-sm text-zinc-500 mb-4">Gaps between your CV and job requirements</p>
-                        <ul class="space-y-3">
-                            @foreach($analysis->weaknesses as $index => $weakness)
-                                <li class="flex items-start gap-3 p-4 bg-gradient-to-r from-amber-500/10 to-transparent rounded-lg border-l-2 border-amber-500">
-                                    <span class="flex items-center justify-center w-6 h-6 bg-amber-500/20 text-amber-400 text-xs font-bold rounded-full flex-shrink-0">
-                                        {{ $index + 1 }}
-                                    </span>
-                                    <span class="text-zinc-300 leading-relaxed">{{ $weakness }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-            </div>
-
-            @if($analysis->missing_keywords && count($analysis->missing_keywords) > 0)
-                <div class="glass-card border-red-500/20">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-semibold text-red-400 flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                                    <flux:icon name="magnifying-glass-circle" class="w-4 h-4" />
-                                </div>
-                                Missing Keywords
-                            </h3>
-                            <p class="text-sm text-zinc-500 mt-1">Add these important keywords from the job description to improve your match score</p>
-                        </div>
-                        <span class="text-xs text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full">{{ count($analysis->missing_keywords) }} keywords</span>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($analysis->missing_keywords as $keyword)
-                            <span class="px-4 py-2 bg-gradient-to-r from-red-500/10 to-red-500/5 text-red-400 text-sm rounded-lg border border-red-500/20 flex items-center gap-2 hover:from-red-500/20 hover:to-red-500/10 transition">
-                                <flux:icon name="plus-circle" class="w-4 h-4" />
-                                {{ $keyword }}
-                            </span>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
-
-            @if($analysis->improvements && count($analysis->improvements) > 0)
-                <div class="glass-card border-violet-500/20">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h3 class="text-lg font-semibold text-violet-400 flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                                    <flux:icon name="light-bulb" class="w-4 h-4" />
-                                </div>
-                                Suggested Improvements
-                            </h3>
-                            <p class="text-sm text-zinc-500 mt-1">Actionable tips to strengthen your CV</p>
-                        </div>
-                        <span class="text-xs text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full">{{ count($analysis->improvements) }} tips</span>
-                    </div>
-                    <div class="space-y-3 mt-4">
-                        @foreach($analysis->improvements as $index => $improvement)
-                            <div class="flex items-start gap-4 p-5 bg-gradient-to-r from-violet-500/5 to-transparent rounded-xl border border-violet-500/10 hover:border-violet-500/30 transition group">
-                                <span class="flex items-center justify-center w-8 h-8 bg-violet-500/20 text-violet-400 text-sm font-bold rounded-lg flex-shrink-0 group-hover:scale-110 transition">
-                                    {{ $index + 1 }}
-                                </span>
-                                <div class="flex-1">
-                                    <span class="text-zinc-300 leading-relaxed">{{ $improvement }}</span>
-                                </div>
-                                <flux:icon name="chevron-right" class="w-5 h-5 text-zinc-600 flex-shrink-0" />
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
-
-            @if($analysis->rewritten_bullets && count($analysis->rewritten_bullets) > 0)
-                <div class="glass-card border-blue-500/20">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-semibold text-blue-400 flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                                    <flux:icon name="pencil-square" class="w-4 h-4" />
-                                </div>
-                                Rewritten Bullet Points
-                            </h3>
-                            <p class="text-sm text-zinc-500 mt-1">AI-optimized versions of your existing bullet points for maximum impact</p>
-                        </div>
-                        <span class="text-xs text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full">{{ count($analysis->rewritten_bullets) }} bullets</span>
-                    </div>
-                    <div class="space-y-4">
-                        @foreach($analysis->rewritten_bullets as $index => $bullet)
-                            <div class="p-5 bg-gradient-to-r from-blue-500/5 to-transparent rounded-xl border border-blue-500/10">
-                                <div class="flex items-center gap-2 mb-4">
-                                    <span class="flex items-center justify-center w-6 h-6 bg-blue-500/20 text-blue-400 text-xs font-bold rounded-lg">
-                                        #{{ $index + 1 }}
-                                    </span>
-                                    <span class="text-xs text-zinc-500 uppercase tracking-wide">Original vs Improved</span>
-                                </div>
-                                <div class="grid md:grid-cols-2 gap-4">
-                                    <div class="p-4 bg-zinc-800/50 rounded-lg">
-                                        <p class="text-xs text-zinc-500 mb-2 flex items-center gap-1">
-                                            <flux:icon name="x-mark" class="w-3 h-3" />
-                                            Original
-                                        </p>
-                                        <p class="text-zinc-400 leading-relaxed">{{ $bullet['original'] ?? '' }}</p>
-                                    </div>
-                                    <div class="p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
-                                        <p class="text-xs text-blue-400 mb-2 flex items-center gap-1">
-                                            <flux:icon name="sparkles" class="w-3 h-3" />
-                                            AI Improved
-                                        </p>
-                                        <p class="text-white font-medium leading-relaxed">{{ $bullet['improved'] ?? '' }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
         </div>
     @endif
 
     @if($status === 'failed')
-        <div class="glass-card text-center py-12">
-            <flux:icon name="exclamation-circle" class="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h2 class="text-xl font-semibold text-white mb-2">Analysis Failed</h2>
+        <div class="glass-card text-center py-16">
+            <div class="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-6">
+                <flux:icon name="exclamation-circle" class="w-10 h-10 text-red-400" />
+            </div>
+            <h2 class="text-2xl font-semibold text-white mb-3">Analysis Failed</h2>
             <p class="text-zinc-400 mb-6">{{ $analysis?->full_analysis ?? 'Something went wrong. Please try again.' }}</p>
-            <flux:button wire:click="resetAnalysis" variant="primary">
+            <flux:button wire:click="$set('status', 'idle')" variant="primary">
                 Try Again
             </flux:button>
         </div>
