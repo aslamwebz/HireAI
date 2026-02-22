@@ -5,10 +5,15 @@ use App\Models\InterviewPrep as InterviewPrepModel;
 use App\Models\InterviewQuestion;
 use App\Models\UploadedCv;
 use App\Services\AiService;
+use App\Services\CvTextExtractor;
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use Livewire\Attributes\Validate;
 
 new class extends Component
 {
+    use WithFileUploads;
+
     public string $jobDescription = '';
     public string $cvContent = '';
     public string $focusArea = 'general';
@@ -22,6 +27,17 @@ new class extends Component
     public bool $showFeedback = false;
     public array $currentFeedback = [];
     public ?int $selectedCvId = null;
+    public string $cvMode = 'select';
+
+    #[Validate('file|mimes:pdf,doc,docx,txt|max:10240')]
+    public $cvFile = null;
+
+    public function mount(): void
+    {
+        if (auth()->user()->uploadedCvs()->where('is_default', true)->exists()) {
+            $this->cvMode = 'select';
+        }
+    }
 
     public function getSavedCvsProperty()
     {
@@ -42,6 +58,14 @@ new class extends Component
         if ($cv && $cv->extracted_text) {
             $this->selectedCvId = $cvId;
             $this->cvContent = $cv->extracted_text;
+        }
+    }
+
+    public function updatedCvFile(): void
+    {
+        if ($this->cvFile) {
+            $extractor = app(CvTextExtractor::class);
+            $this->cvContent = $extractor->extract($this->cvFile);
         }
     }
 
@@ -72,7 +96,6 @@ new class extends Component
             'status' => 'pending',
         ]);
 
-        // Run synchronously for immediate feedback
         ProcessInterviewPrep::dispatchSync($interviewPrep);
 
         $this->interviewPrep = $interviewPrep->fresh();
@@ -233,57 +256,122 @@ new class extends Component
                 <div class="glass-card">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-white">Your CV (Optional)</h2>
-                        <flux:button href="{{ route('cv-analyzer') }}" size="xs" variant="subtle" icon="plus">
-                            Upload CV
-                        </flux:button>
+                        <div class="flex gap-1">
+                            <flux:button 
+                                wire:click="$set('cvMode', 'select')" 
+                                size="xs" 
+                                variant="{{ $cvMode === 'select' ? 'primary' : 'subtle' }}"
+                            >
+                                Select
+                            </flux:button>
+                            <flux:button 
+                                wire:click="$set('cvMode', 'upload')" 
+                                size="xs" 
+                                variant="{{ $cvMode === 'upload' ? 'primary' : 'subtle' }}"
+                            >
+                                Upload
+                            </flux:button>
+                            <flux:button 
+                                wire:click="$set('cvMode', 'paste')" 
+                                size="xs" 
+                                variant="{{ $cvMode === 'paste' ? 'primary' : 'subtle' }}"
+                            >
+                                Paste
+                            </flux:button>
+                        </div>
                     </div>
                     
-                    @if($this->savedCvs->isNotEmpty())
-                        <div class="mb-4 space-y-2">
-                            <p class="text-xs text-zinc-500 mb-2">Select a saved CV or paste below</p>
-                            @foreach($this->savedCvs as $savedCv)
-                                <button
-                                    wire:click="selectSavedCv({{ $savedCv->id }})"
-                                    class="w-full flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition text-left {{ $selectedCvId === $savedCv->id ? 'ring-2 ring-violet-500' : '' }}"
-                                >
-                                    <div class="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                                        <flux:icon name="document-text" class="w-5 h-5 text-violet-400" />
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-white font-medium truncate">{{ $savedCv->name }}</p>
-                                        <p class="text-xs text-zinc-500">{{ $savedCv->original_name }}</p>
-                                    </div>
-                                    @if($savedCv->is_default)
-                                        <span class="px-2 py-1 bg-violet-500/20 text-violet-400 text-xs rounded">Default</span>
-                                    @endif
-                                </button>
-                            @endforeach
+                    @if($cvMode === 'select')
+                        <div class="space-y-4">
+                            @if($this->savedCvs->isNotEmpty())
+                                <div class="space-y-2">
+                                    @foreach($this->savedCvs as $savedCv)
+                                        <button
+                                            wire:click="selectSavedCv({{ $savedCv->id }})"
+                                            class="w-full flex items-center gap-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition text-left {{ $selectedCvId === $savedCv->id ? 'ring-2 ring-violet-500 bg-violet-500/10' : '' }}"
+                                        >
+                                            <div class="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                                                <flux:icon name="document-text" class="w-5 h-5 text-violet-400" />
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm text-white font-medium">{{ $savedCv->name }}</p>
+                                                <p class="text-xs text-zinc-500">{{ $savedCv->original_name }}</p>
+                                            </div>
+                                            @if($savedCv->is_default)
+                                                <span class="px-2 py-1 bg-violet-500/20 text-violet-400 text-xs rounded">Default</span>
+                                            @endif
+                                            <flux:icon name="chevron-right" class="w-5 h-5 text-zinc-600" />
+                                        </button>
+                                    @endforeach
+                                </div>
+                                <div class="flex items-center justify-center pt-2">
+                                    <flux:button href="{{ route('cvs.index') }}" size="sm" variant="subtle" icon="folder-open">
+                                        Manage CVs
+                                    </flux:button>
+                                </div>
+                            @else
+                                <div class="text-center py-8">
+                                    <flux:icon name="folder-open" class="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+                                    <p class="text-zinc-400 mb-3">No saved CVs yet</p>
+                                    <flux:button wire:click="$set('cvMode', 'upload')" variant="primary">
+                                        <flux:icon name="cloud-arrow-up" class="w-4 h-4 mr-2" />
+                                        Upload CV
+                                    </flux:button>
+                                </div>
+                            @endif
                         </div>
-                        <div class="relative mb-4">
-                            <div class="absolute inset-0 flex items-center">
-                                <span class="w-full border-t border-zinc-700"></span>
+                    @elseif($cvMode === 'upload')
+                        <div class="space-y-4">
+                            <div 
+                                class="border-2 border-dashed border-white/20 rounded-lg p-8 text-center hover:border-violet-500/50 transition"
+                                wire:ignore
+                                x-data="{ dragging: false }"
+                                @dragover.prevent="dragging = true"
+                                @dragleave.prevent="dragging = false"
+                                @drop.prevent="dragging = false"
+                                :class="{ 'border-violet-500 bg-violet-500/10': dragging }"
+                            >
+                                <flux:icon name="cloud-arrow-up" class="w-12 h-12 mx-auto text-zinc-500 mb-3" />
+                                <p class="text-zinc-400 mb-2">Drag & drop your CV or click to browse</p>
+                                <p class="text-xs text-zinc-500">PDF, DOC, DOCX, TXT (max 10MB)</p>
+                                <input 
+                                    type="file" 
+                                    wire:model="cvFile" 
+                                    accept=".pdf,.doc,.docx,.txt"
+                                    class="mt-4 block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-violet-600 file:text-white hover:file:bg-violet-500 file:cursor-pointer"
+                                >
                             </div>
-                            <div class="relative flex justify-center text-xs">
-                                <span class="bg-zinc-900 px-2 text-zinc-500">Or paste CV</span>
+
+                            @if($cvFile)
+                                <div class="flex items-center justify-between p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                                    <div class="flex items-center gap-3">
+                                        <flux:icon name="document-check" class="w-5 h-5 text-green-400" />
+                                        <div>
+                                            <p class="text-sm text-white font-medium">{{ $cvFile->getClientOriginalName() }}</p>
+                                            <p class="text-xs text-zinc-500">{{ number_format($cvFile->getSize() / 1024, 1) }} KB extracted</p>
+                                        </div>
+                                    </div>
+                                    <flux:button wire:click="$set('cvFile', null)" size="xs" variant="subtle" icon="x-mark" />
+                                </div>
+                            @endif
+
+                            <div class="text-center">
+                                <flux:button href="{{ route('cvs.index') }}" size="sm" variant="subtle" icon="folder-open">
+                                    Or manage saved CVs
+                                </flux:button>
                             </div>
                         </div>
                     @else
-                        <div class="mb-4 p-4 bg-zinc-800/30 rounded-lg text-center">
-                            <flux:icon name="document-plus" class="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                            <p class="text-sm text-zinc-400 mb-2">No saved CVs yet</p>
-                            <p class="text-xs text-zinc-500">Upload a CV in the CV Analyzer to use it here</p>
-                        </div>
+                        <flux:field>
+                            <flux:description>Adding your CV helps generate more personalized questions</flux:description>
+                            <flux:textarea
+                                wire:model="cvContent"
+                                placeholder="Paste your CV content here..."
+                                rows="6"
+                                class="font-mono text-sm"
+                            />
+                        </flux:field>
                     @endif
-
-                    <flux:field>
-                        <flux:description>Adding your CV helps generate more personalized questions</flux:description>
-                        <flux:textarea
-                            wire:model="cvContent"
-                            placeholder="Paste your CV content here..."
-                            rows="6"
-                            class="font-mono text-sm"
-                        />
-                    </flux:field>
                 </div>
             </div>
 
