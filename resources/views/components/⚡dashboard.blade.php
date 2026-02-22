@@ -219,34 +219,92 @@ new class extends Component
         </div>
 
         <div class="glass-card">
-            <h2 class="text-lg font-semibold text-white mb-4">Recent CV Analyses</h2>
-            <div class="space-y-3">
-                @forelse($this->recentAnalyses as $analysis)
-                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                        <div class="flex-1 min-w-0">
-                            <p class="text-white font-medium truncate">{{ Str::limit($analysis->job_description, 50) }}</p>
-                            <p class="text-sm text-zinc-400">{{ $analysis->created_at->diffForHumans() }}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="score-circle w-12 h-12 relative" data-score="{{ $analysis->match_score }}">
-                                <svg class="w-12 h-12 transform -rotate-90">
-                                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" class="text-zinc-700" />
-                                    <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3" fill="none" 
-                                        class="{{ $analysis->getMatchScoreColor() === 'green' ? 'text-green-500' : ($analysis->getMatchScoreColor() === 'amber' ? 'text-amber-500' : 'text-red-500') }}"
-                                        stroke-dasharray="{{ 2 * 3.14159 * 20 }}"
-                                        stroke-dashoffset="{{ 2 * 3.14159 * 20 * (1 - $analysis->match_score / 100) }}"
-                                        stroke-linecap="round" />
-                                </svg>
-                                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-                                    {{ $analysis->match_score }}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <p class="text-zinc-400 text-center py-4">No CV analyses yet</p>
-                @endforelse
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-white">Recent CV Analyses</h2>
+                <flux:button href="{{ route('cv-analyzer') }}" size="sm" variant="subtle">
+                    View All
+                </flux:button>
             </div>
+            @if($this->recentAnalyses->isNotEmpty())
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-xs text-zinc-500 uppercase border-b border-white/10">
+                                <th class="pb-3 font-medium">Analysis</th>
+                                <th class="pb-3 font-medium">Match</th>
+                                <th class="pb-3 font-medium">ATS</th>
+                                <th class="pb-3 font-medium">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            @foreach($this->recentAnalyses as $analysis)
+                                <tr class="group hover:bg-white/5 transition">
+                                    <td class="py-3">
+                                        <p class="text-white font-medium">{{ Str::limit($analysis->job_description, 40) }}</p>
+                                        <p class="text-xs text-zinc-500">
+                                            @if($analysis->strengths)
+                                                {{ count($analysis->strengths) }} strengths
+                                            @endif
+                                            @if($analysis->strengths && $analysis->weaknesses)
+                                                •
+                                            @endif
+                                            @if($analysis->weaknesses)
+                                                {{ count($analysis->weaknesses) }} improvements
+                                            @endif
+                                        </p>
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="score-circle w-10 h-10 relative">
+                                                <svg class="w-10 h-10 transform -rotate-90">
+                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" class="text-zinc-700" />
+                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" 
+                                                        class="{{ $analysis->getMatchScoreColor() === 'green' ? 'text-green-500' : ($analysis->getMatchScoreColor() === 'amber' ? 'text-amber-500' : 'text-red-500') }}"
+                                                        stroke-dasharray="{{ 2 * 3.14159 * 16 }}"
+                                                        stroke-dashoffset="{{ 2 * 3.14159 * 16 * (1 - $analysis->match_score / 100) }}"
+                                                        stroke-linecap="round" />
+                                                </svg>
+                                                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                                                    {{ $analysis->match_score }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="score-circle w-10 h-10 relative">
+                                                <svg class="w-10 h-10 transform -rotate-90">
+                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" class="text-zinc-700" />
+                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" 
+                                                        class="{{ $analysis->ats_score >= 80 ? 'text-green-500' : ($analysis->ats_score >= 50 ? 'text-amber-500' : 'text-red-500') }}"
+                                                        stroke-dasharray="{{ 2 * 3.14159 * 16 }}"
+                                                        stroke-dashoffset="{{ 2 * 3.14159 * 16 * (1 - $analysis->ats_score / 100) }}"
+                                                        stroke-linecap="round" />
+                                                </svg>
+                                                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+                                                    {{ $analysis->ats_score }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 text-right">
+                                        <p class="text-sm text-white">{{ $analysis->created_at->format('M d') }}</p>
+                                        <p class="text-xs text-zinc-500">{{ $analysis->created_at->diffForHumans() }}</p>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center py-8">
+                    <flux:icon name="document-text" class="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+                    <p class="text-zinc-400 mb-4">No CV analyses yet</p>
+                    <flux:button href="{{ route('cv-analyzer') }}" variant="primary" size="sm">
+                        Analyze Your First CV
+                    </flux:button>
+                </div>
+            @endif
         </div>
     </div>
 </div>

@@ -10,6 +10,7 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('ai-settings', 'ai-settings')->name('ai-settings');
+    Route::view('cvs', 'cvs')->name('cvs.index');
     Route::view('cv-analyzer', 'cv-analyzer')->name('cv-analyzer');
     Route::view('cover-letter', 'cover-letter')->name('cover-letter');
     Route::view('jobs', 'jobs')->name('jobs.index');

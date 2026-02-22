@@ -2,6 +2,7 @@
 
 use App\Jobs\ProcessCoverLetter;
 use App\Models\CoverLetter;
+use App\Models\UploadedCv;
 use Livewire\Component;
 
 new class extends Component
@@ -14,6 +15,12 @@ new class extends Component
     public string $status = 'idle';
     public bool $isEditing = false;
     public string $editedContent = '';
+    public ?int $selectedCvId = null;
+
+    public function getSavedCvsProperty()
+    {
+        return auth()->user()->uploadedCvs;
+    }
 
     public function getRecentJobsProperty()
     {
@@ -21,6 +28,15 @@ new class extends Component
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get();
+    }
+
+    public function selectSavedCv($cvId): void
+    {
+        $cv = auth()->user()->uploadedCvs()->find($cvId);
+        if ($cv && $cv->extracted_text) {
+            $this->selectedCvId = $cvId;
+            $this->cvContent = $cv->extracted_text;
+        }
     }
 
     public function selectJob($jobId): void
@@ -140,7 +156,50 @@ new class extends Component
         <div class="grid lg:grid-cols-2 gap-6">
             <div class="space-y-6">
                 <div class="glass-card">
-                    <h2 class="text-lg font-semibold text-white mb-4">Your CV</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-white">Your CV</h2>
+                        <flux:button href="{{ route('cv-analyzer') }}" size="xs" variant="subtle" icon="plus">
+                            Upload CV
+                        </flux:button>
+                    </div>
+
+                    @if($this->savedCvs->isNotEmpty())
+                        <div class="mb-4 space-y-2">
+                            <p class="text-xs text-zinc-500 mb-2">Select a saved CV or paste below</p>
+                            @foreach($this->savedCvs as $savedCv)
+                                <button
+                                    wire:click="selectSavedCv({{ $savedCv->id }})"
+                                    class="w-full flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition text-left {{ $selectedCvId === $savedCv->id ? 'ring-2 ring-violet-500' : '' }}"
+                                >
+                                    <div class="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                                        <flux:icon name="document-text" class="w-5 h-5 text-violet-400" />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm text-white font-medium truncate">{{ $savedCv->name }}</p>
+                                        <p class="text-xs text-zinc-500">{{ $savedCv->original_name }}</p>
+                                    </div>
+                                    @if($savedCv->is_default)
+                                        <span class="px-2 py-1 bg-violet-500/20 text-violet-400 text-xs rounded">Default</span>
+                                    @endif
+                                </button>
+                            @endforeach
+                        </div>
+                        <div class="relative mb-4">
+                            <div class="absolute inset-0 flex items-center">
+                                <span class="w-full border-t border-zinc-700"></span>
+                            </div>
+                            <div class="relative flex justify-center text-xs">
+                                <span class="bg-zinc-900 px-2 text-zinc-500">Or paste CV</span>
+                            </div>
+                        </div>
+                    @else
+                        <div class="mb-4 p-4 bg-zinc-800/30 rounded-lg text-center">
+                            <flux:icon name="document-plus" class="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                            <p class="text-sm text-zinc-400 mb-2">No saved CVs yet</p>
+                            <p class="text-xs text-zinc-500">Upload a CV in the CV Analyzer to use it here</p>
+                        </div>
+                    @endif
+
                     <flux:field>
                         <flux:textarea
                             wire:model="cvContent"

@@ -66,6 +66,11 @@ class User extends Authenticatable
         return $this->hasMany(CvAnalysis::class);
     }
 
+    public function uploadedCvs(): HasMany
+    {
+        return $this->hasMany(UploadedCv::class)->orderBy('is_default', 'desc')->orderBy('created_at', 'desc');
+    }
+
     public function coverLetters(): HasMany
     {
         return $this->hasMany(CoverLetter::class);

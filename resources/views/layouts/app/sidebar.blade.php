@@ -20,7 +20,10 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="document-text" :href="route('cv-analyzer')" :current="request()->routeIs('cv-analyzer')" wire:navigate>
+                    <flux:sidebar.item icon="folder-open" :href="route('cvs.index')" :current="request()->routeIs('cvs.*')" wire:navigate>
+                        {{ __('My CVs') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="document-magnifying-glass" :href="route('cv-analyzer')" :current="request()->routeIs('cv-analyzer')" wire:navigate>
                         {{ __('CV Analyzer') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="envelope" :href="route('cover-letter')" :current="request()->routeIs('cover-letter')" wire:navigate>
