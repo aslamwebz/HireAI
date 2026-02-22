@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Subscription;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
 use Stripe\Stripe;
 use Stripe\StripeClient;
 
@@ -49,7 +48,7 @@ class StripeService
                 'quantity' => 1,
             ]],
             'mode' => 'subscription',
-            'success_url' => route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}',
+            'success_url' => route('subscription.success').'?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('pricing'),
             'metadata' => [
                 'user_id' => $user->id,
@@ -61,7 +60,7 @@ class StripeService
 
     public function createBillingPortalSession(User $user): string
     {
-        if (!$user->stripe_id) {
+        if (! $user->stripe_id) {
             throw new \Exception('User is not a Stripe customer');
         }
 
@@ -88,12 +87,12 @@ class StripeService
     protected function handleCheckoutCompleted(array $session): void
     {
         $userId = $session['metadata']['user_id'] ?? null;
-        if (!$userId) {
+        if (! $userId) {
             return;
         }
 
         $user = User::find($userId);
-        if (!$user) {
+        if (! $user) {
             return;
         }
 
@@ -112,7 +111,7 @@ class StripeService
     protected function handleSubscriptionUpdated(array $stripeSubscription): void
     {
         $subscription = Subscription::where('stripe_id', $stripeSubscription['id'])->first();
-        if (!$subscription) {
+        if (! $subscription) {
             return;
         }
 
@@ -132,7 +131,7 @@ class StripeService
     protected function handleSubscriptionDeleted(array $stripeSubscription): void
     {
         $subscription = Subscription::where('stripe_id', $stripeSubscription['id'])->first();
-        if (!$subscription) {
+        if (! $subscription) {
             return;
         }
 

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 
 class CvTextExtractor
 {
@@ -21,21 +22,41 @@ class CvTextExtractor
 
     protected function extractFromTxt(string $path): string
     {
-        return file_get_contents($path) ?: '';
+        $content = file_get_contents($path);
+
+        if ($content === false) {
+            Log::warning('CV text extraction failed: could not read TXT file', ['path' => $path]);
+
+            return '';
+        }
+
+        return $content;
     }
 
     protected function extractFromPdf(string $path): string
     {
         if (! class_exists(\Smalot\PdfParser\Parser::class)) {
+            Log::warning('CV text extraction failed: PDF parser not installed');
+
             return '';
         }
 
         try {
             $parser = new \Smalot\PdfParser\Parser;
             $pdf = $parser->parseFile($path);
+            $text = $pdf->getText();
 
-            return $pdf->getText() ?: '';
-        } catch (\Exception) {
+            if (empty($text)) {
+                Log::warning('CV text extraction: PDF returned empty text', ['path' => $path]);
+            }
+
+            return $text ?: '';
+        } catch (\Exception $e) {
+            Log::error('CV text extraction failed for PDF', [
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
             return '';
         }
     }
@@ -43,6 +64,8 @@ class CvTextExtractor
     protected function extractFromDoc(string $path): string
     {
         if (! class_exists(\PhpOffice\PhpWord\IOFactory::class)) {
+            Log::warning('CV text extraction failed: PhpWord not installed');
+
             return '';
         }
 
@@ -62,8 +85,19 @@ class CvTextExtractor
                 }
             }
 
-            return trim($text);
-        } catch (\Exception) {
+            $text = trim($text);
+
+            if (empty($text)) {
+                Log::warning('CV text extraction: DOC returned empty text', ['path' => $path]);
+            }
+
+            return $text;
+        } catch (\Exception $e) {
+            Log::error('CV text extraction failed for DOC', [
+                'path' => $path,
+                'error' => $e->getMessage(),
+            ]);
+
             return '';
         }
     }

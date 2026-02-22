@@ -20,14 +20,19 @@ new class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        
-        $this->totalApplications = $user->jobApplications()->count();
-        $this->wishlistCount = $user->jobApplications()->where('status', 'wishlist')->count();
-        $this->appliedCount = $user->jobApplications()->where('status', 'applied')->count();
-        $this->interviewCount = $user->jobApplications()->where('status', 'interview')->count();
-        $this->offerCount = $user->jobApplications()->where('status', 'offer')->count();
-        $this->rejectedCount = $user->jobApplications()->where('status', 'rejected')->count();
-        
+
+        $statusCounts = $user->jobApplications()
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $this->totalApplications = $statusCounts->sum();
+        $this->wishlistCount = $statusCounts->get('wishlist', 0);
+        $this->appliedCount = $statusCounts->get('applied', 0);
+        $this->interviewCount = $statusCounts->get('interview', 0);
+        $this->offerCount = $statusCounts->get('offer', 0);
+        $this->rejectedCount = $statusCounts->get('rejected', 0);
+
         $this->analysesCount = $user->cvAnalyses()->where('status', 'completed')->count();
         $this->analysesUsed = $user->getAnalysisUsage();
         $this->analysesLimit = $user->getAnalysisLimit();

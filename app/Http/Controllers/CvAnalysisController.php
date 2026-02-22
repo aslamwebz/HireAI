@@ -3,23 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\CvAnalysis;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class CvAnalysisController extends Controller
 {
-    public function show(CvAnalysis $cvAnalysis)
+    public function show(CvAnalysis $cvAnalysis): View
     {
-        if ($cvAnalysis->user_id !== auth()->id()) {
-            abort(403);
-        }
+        $this->authorize('view', $cvAnalysis);
 
         return view('cv-analysis-show', ['analysis' => $cvAnalysis]);
     }
 
-    public function destroy(CvAnalysis $cvAnalysis)
+    public function destroy(CvAnalysis $cvAnalysis): RedirectResponse
     {
-        if ($cvAnalysis->user_id !== auth()->id()) {
-            abort(403);
-        }
+        $this->authorize('delete', $cvAnalysis);
 
         $cvAnalysis->delete();
 
