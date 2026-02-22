@@ -56,27 +56,16 @@ new class extends Component
             'status' => 'pending',
         ]);
 
-        ProcessInterviewPrep::dispatch($interviewPrep);
+        // Run synchronously for immediate feedback
+        ProcessInterviewPrep::dispatchSync($interviewPrep);
 
-        $this->interviewPrep = $interviewPrep;
-        $this->status = 'processing';
-    }
-
-    public function pollGeneration(): void
-    {
-        if (!$this->interviewPrep) {
-            return;
-        }
-
-        $this->interviewPrep->refresh();
-
+        $this->interviewPrep = $interviewPrep->fresh();
+        
         if ($this->interviewPrep->status === 'completed') {
             $this->status = 'ready';
             $this->currentQuestionIndex = 0;
-        } elseif ($this->interviewPrep->status === 'failed') {
-            $this->status = 'failed';
         } else {
-            $this->status = 'processing';
+            $this->status = 'failed';
         }
     }
 
@@ -270,24 +259,13 @@ new class extends Component
         </div>
     @endif
 
-    @if($status === 'processing')
+    @if($status === 'creating')
         <div class="glass-card text-center py-12">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-500/20 mb-4 animate-pulse">
                 <flux:icon name="chat-bubble-left-right" class="w-8 h-8 text-violet-400" />
             </div>
             <h2 class="text-xl font-semibold text-white mb-2">Generating Questions...</h2>
-            <p class="text-zinc-400 mb-6">Creating personalized interview questions</p>
-            <div class="flex justify-center gap-1">
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
-            </div>
-            <flux:button wire:click="pollGeneration" variant="subtle" class="mt-4">
-                Check Status
-            </flux:button>
-            <script>
-                setTimeout(function() { Livewire.dispatch('pollGeneration'); }, 3000);
-            </script>
+            <p class="text-zinc-400">Creating personalized interview questions</p>
         </div>
     @endif
 

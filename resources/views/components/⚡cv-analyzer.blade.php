@@ -127,11 +127,17 @@ new class extends Component
             'status' => 'pending',
         ]);
 
-        ProcessCvAnalysis::dispatch($analysis);
+        // Run synchronously for immediate feedback
+        ProcessCvAnalysis::dispatchSync($analysis);
 
-        $this->analysis = $analysis;
-        $this->status = 'processing';
-        $this->pollAnalysis();
+        $this->analysis = $analysis->fresh();
+        $this->status = $this->analysis->status === 'completed' ? 'completed' : 'failed';
+        
+        if ($this->status === 'completed') {
+            $user = auth()->user();
+            $this->analysesUsed = $user->getAnalysisUsage();
+            $this->canAnalyze = $user->canAnalyze();
+        }
     }
 
     public function pollAnalysis(): void
@@ -343,7 +349,7 @@ new class extends Component
     @endif
 
     @if($status === 'processing')
-        <div class="glass-card text-center py-12">
+        <div class="glass-card text-center py-12" wire:poll.3s="pollAnalysis">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-500/20 mb-4 animate-pulse">
                 <flux:icon name="sparkles" class="w-8 h-8 text-violet-400" />
             </div>
@@ -354,12 +360,7 @@ new class extends Component
                 <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
                 <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
             </div>
-            <flux:button wire:click="pollAnalysis" variant="subtle" class="mt-4">
-                Check Status
-            </flux:button>
-            <script>
-                setTimeout(function() { Livewire.dispatch('pollAnalysis'); }, 3000);
-            </script>
+            <p class="text-xs text-zinc-500 mt-4">Auto-refreshing...</p>
         </div>
     @endif
 

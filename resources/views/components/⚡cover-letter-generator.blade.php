@@ -51,10 +51,15 @@ new class extends Component
             'status' => 'pending',
         ]);
 
-        ProcessCoverLetter::dispatch($coverLetter);
+        // Run synchronously for immediate feedback
+        ProcessCoverLetter::dispatchSync($coverLetter);
 
-        $this->coverLetter = $coverLetter;
-        $this->status = 'processing';
+        $this->coverLetter = $coverLetter->fresh();
+        $this->status = $this->coverLetter->status === 'completed' ? 'completed' : 'failed';
+        
+        if ($this->status === 'completed') {
+            $this->editedContent = $this->coverLetter->content;
+        }
     }
 
     public function pollGeneration(): void
@@ -204,24 +209,13 @@ new class extends Component
         </div>
     @endif
 
-    @if($status === 'processing')
+    @if($status === 'creating')
         <div class="glass-card text-center py-12">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-500/20 mb-4 animate-pulse">
                 <flux:icon name="document-text" class="w-8 h-8 text-violet-400" />
             </div>
             <h2 class="text-xl font-semibold text-white mb-2">Generating Your Cover Letter...</h2>
-            <p class="text-zinc-400 mb-6">Creating a personalized cover letter based on your CV and the job</p>
-            <div class="flex justify-center gap-1">
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-                <div class="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
-            </div>
-            <flux:button wire:click="pollGeneration" variant="subtle" class="mt-4">
-                Check Status
-            </flux:button>
-            <script>
-                setTimeout(function() { Livewire.dispatch('pollGeneration'); }, 3000);
-            </script>
+            <p class="text-zinc-400">Creating a personalized cover letter based on your CV and the job</p>
         </div>
     @endif
 
