@@ -186,6 +186,7 @@ new class extends Component
                                 wire:click="$set('cvMode', 'select')" 
                                 size="xs" 
                                 variant="{{ $cvMode === 'select' ? 'primary' : 'subtle' }}"
+                                :disabled="$status === 'creating'"
                             >
                                 Select
                             </flux:button>
@@ -193,6 +194,7 @@ new class extends Component
                                 wire:click="$set('cvMode', 'upload')" 
                                 size="xs" 
                                 variant="{{ $cvMode === 'upload' ? 'primary' : 'subtle' }}"
+                                :disabled="$status === 'creating'"
                             >
                                 Upload
                             </flux:button>
@@ -200,6 +202,7 @@ new class extends Component
                                 wire:click="$set('cvMode', 'paste')" 
                                 size="xs" 
                                 variant="{{ $cvMode === 'paste' ? 'primary' : 'subtle' }}"
+                                :disabled="$status === 'creating'"
                             >
                                 Paste
                             </flux:button>
@@ -214,6 +217,7 @@ new class extends Component
                                         <button
                                             wire:click="selectSavedCv({{ $savedCv->id }})"
                                             class="w-full flex items-center gap-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition text-left {{ $selectedCvId === $savedCv->id ? 'ring-2 ring-violet-500 bg-violet-500/10' : '' }}"
+                                            {{ $status === 'creating' ? 'disabled' : '' }}
                                         >
                                             <div class="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
                                                 <flux:icon name="document-text" class="w-5 h-5 text-violet-400" />
@@ -348,9 +352,11 @@ new class extends Component
                     wire:click="generate" 
                     variant="primary" 
                     class="w-full"
+                    :disabled="$status === 'creating'"
+                    :loading="$status === 'creating'"
                 >
                     <flux:icon name="sparkles" class="w-4 h-4 mr-2" />
-                    Generate Cover Letter
+                    {{ $status === 'creating' ? 'Generating...' : 'Generate Cover Letter' }}
                 </flux:button>
             </div>
         </div>
