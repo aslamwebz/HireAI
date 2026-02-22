@@ -44,12 +44,12 @@ class AiService
     protected function getEnvApiKey(string $provider): ?string
     {
         return match ($provider) {
-            'openrouter' => env('OPENROUTER_API_KEY'),
-            'groq' => env('GROQ_API_KEY'),
-            'openai' => env('OPENAI_API_KEY'),
-            'anthropic' => env('ANTHROPIC_API_KEY'),
-            'gemini' => env('GEMINI_API_KEY'),
-            'mistral' => env('MISTRAL_API_KEY'),
+            'openrouter' => config('services.openrouter.api_key'),
+            'groq' => config('services.groq.api_key'),
+            'openai' => config('services.openai.api_key'),
+            'anthropic' => config('services.anthropic.api_key'),
+            'gemini' => config('services.gemini.api_key'),
+            'mistral' => config('services.mistral.api_key'),
             default => null,
         };
     }
