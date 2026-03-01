@@ -116,6 +116,148 @@ class AiService
         return $this->parseScoreAnswerResponse($response);
     }
 
+    public function optimizeResume(array $resumeContent, ?string $targetJobDescription = null): array
+    {
+        $prompt = $this->buildResumeOptimizationPrompt($resumeContent, $targetJobDescription);
+        $response = $this->sendRequest($prompt);
+
+        return $this->parseResumeOptimizationResponse($response);
+    }
+
+    public function optimizeResumeForAts(array $resumeContent, string $jobDescription): array
+    {
+        $prompt = $this->buildAtsOptimizationPrompt($resumeContent, $jobDescription);
+        $response = $this->sendRequest($prompt);
+
+        return $this->parseAtsOptimizationResponse($response);
+    }
+
+    protected function buildResumeOptimizationPrompt(array $resumeContent, ?string $targetJobDescription): string
+    {
+        $resumeJson = json_encode($resumeContent, JSON_PRETTY_PRINT);
+
+        $jobContext = $targetJobDescription
+            ? "\n\n**Target Job Description:**\n{$targetJobDescription}"
+            : '';
+
+        return <<<PROMPT
+Optimize this resume content to be more impactful and professional.{$jobContext}
+
+**Current Resume Content (JSON):**
+{$resumeJson}
+
+Return the optimized resume in the EXACT same JSON structure. Make these improvements:
+1. Strengthen professional summary with more impactful language
+2. Rewrite work experience bullet points using action verbs and quantifiable achievements
+3. Improve clarity and conciseness
+4. Add relevant keywords naturally
+5. Ensure consistent formatting and tone
+6. Highlight the most relevant experiences first
+
+Keep the same JSON structure. Return ONLY valid JSON:
+{
+    "personal": {...},
+    "professional_summary": "...",
+    "social_links": {...},
+    "work_experience": [...],
+    "education": [...],
+    "skills": [...],
+    "certifications": [...],
+    "languages": [...],
+    "projects": [...],
+    "awards": [...],
+    "publications": [...],
+    "volunteer_work": [...],
+    "references": [...],
+    "optimization_notes": "Brief explanation of key changes made"
+}
+PROMPT;
+    }
+
+    protected function parseResumeOptimizationResponse(string $response): array
+    {
+        $json = $this->extractJson($response);
+
+        $optimizationNotes = $json['optimization_notes'] ?? '';
+        unset($json['optimization_notes']);
+
+        return [
+            'content' => $json,
+            'optimization_notes' => $optimizationNotes,
+        ];
+    }
+
+    protected function buildAtsOptimizationPrompt(array $resumeContent, string $jobDescription): string
+    {
+        $resumeJson = json_encode($resumeContent, JSON_PRETTY_PRINT);
+
+        return <<<PROMPT
+Optimize this resume for Applicant Tracking Systems (ATS) based on the job description.
+
+**Current Resume Content (JSON):**
+{$resumeJson}
+
+**Target Job Description:**
+{$jobDescription}
+
+Return the ATS-optimized resume in the EXACT same JSON structure. Make these improvements:
+1. Extract key keywords from the job description and naturally incorporate them
+2. Use standard section headings
+3. Spell out acronyms on first use
+4. Use simple, clean formatting
+5. Match job title terminology where appropriate
+6. Ensure dates are in consistent format
+7. Remove any special characters or complex formatting
+8. Quantify achievements with numbers where possible
+
+Keep the same JSON structure. Return ONLY valid JSON:
+{
+    "personal": {...},
+    "professional_summary": "...",
+    "social_links": {...},
+    "work_experience": [...],
+    "education": [...],
+    "skills": [...],
+    "certifications": [...],
+    "languages": [...],
+    "projects": [...],
+    "awards": [...],
+    "publications": [...],
+    "volunteer_work": [...],
+    "references": [...],
+    "ats_keywords_added": ["keyword1", "keyword2"],
+    "ats_score_before": <number 0-100>,
+    "ats_score_after": <number 0-100>,
+    "optimization_notes": "Brief explanation of ATS improvements made"
+}
+PROMPT;
+    }
+
+    protected function parseAtsOptimizationResponse(string $response): array
+    {
+        $json = $this->extractJson($response);
+
+        $atsKeywordsAdded = $json['ats_keywords_added'] ?? [];
+        $atsScoreBefore = $json['ats_score_before'] ?? 0;
+        $atsScoreAfter = $json['ats_score_after'] ?? 0;
+        $optimizationNotes = $json['optimization_notes'] ?? '';
+
+        unset(
+            $json['ats_keywords_added'],
+            $json['ats_score_before'],
+            $json['ats_score_after'],
+            $json['optimization_notes']
+        );
+
+        return [
+            'content' => $json,
+            'ats_keywords_added' => $atsKeywordsAdded,
+            'ats_score_before' => $atsScoreBefore,
+            'ats_score_after' => $atsScoreAfter,
+            'optimization_notes' => $optimizationNotes,
+        ];
+    }
+
     protected function sendRequest(string $prompt): string
     {
         $response = Prism::text()

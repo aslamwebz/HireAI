@@ -47,7 +47,7 @@ class User extends Authenticatable
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 
@@ -84,6 +84,16 @@ class User extends Authenticatable
     public function usageRecords(): HasMany
     {
         return $this->hasMany(UsageRecord::class);
+    }
+
+    public function profile(): HasOne
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
+    public function resumes(): HasMany
+    {
+        return $this->hasMany(Resume::class)->orderBy('is_primary', 'desc')->orderBy('updated_at', 'desc');
     }
 
     public function isPro(): bool
@@ -135,5 +145,29 @@ class User extends Authenticatable
             'free' => 'Free',
             'pro' => 'Pro',
         ];
+    }
+
+    /**
+     * Check if the user has a non-empty profile.
+     */
+    public function hasCompletedProfile(): bool
+    {
+        $profile = $this->profile;
+
+        return $profile !== null && ! $profile->isEmpty();
+    }
+
+    /**
+     * Get the user's profile serialized as plain-text CV for AI tools.
+     */
+    public function getProfileCvText(): string
+    {
+        $profile = $this->profile;
+
+        if (! $profile || $profile->isEmpty()) {
+            return '';
+        }
+
+        return $profile->toCvText();
     }
 }

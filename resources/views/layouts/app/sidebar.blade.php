@@ -20,6 +20,12 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="document-text" :href="route('resumes.index')" :current="request()->routeIs('resumes.*')" wire:navigate>
+                        {{ __('Resume Writer') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="user" :href="route('profile.show')" :current="request()->routeIs('profile.*')" wire:navigate>
+                        {{ __('User Profiles') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="folder-open" :href="route('cvs.index')" :current="request()->routeIs('cvs.*')" wire:navigate>
                         {{ __('My CVs') }}
                     </flux:sidebar.item>

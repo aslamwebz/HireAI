@@ -16,6 +16,8 @@ new class extends Component
     public int $analysesUsed = 0;
     public int $analysesLimit = 5;
     public bool $isPro = false;
+    public int $profileCompletion = 0;
+    public bool $hasProfile = false;
 
     public function mount(): void
     {
@@ -37,11 +39,17 @@ new class extends Component
         $this->analysesUsed = $user->getAnalysisUsage();
         $this->analysesLimit = $user->getAnalysisLimit();
         $this->isPro = $user->isPro();
+
+        // Profile completion
+        $profile = $user->profile;
+        $this->hasProfile = $user->hasCompletedProfile();
+        $this->profileCompletion = $profile ? $profile->completionPercentage() : 0;
     }
 
     public function getRecentJobsProperty()
     {
         return auth()->user()->jobApplications()
+            ->withCount(['cvAnalyses', 'coverLetters', 'interviewPreps'])
             ->orderBy('updated_at', 'desc')
             ->take(5)
             ->get();
@@ -70,6 +78,43 @@ new class extends Component
             </flux:button>
         @endif
     </div>
+
+    {{-- Profile Completion Banner --}}
+    @if(!$hasProfile)
+        <div class="glass-card flex items-center gap-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+            <div class="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                <flux:icon name="user-circle" class="w-6 h-6 text-violet-400" />
+            </div>
+            <div class="flex-1">
+                <h3 class="text-white font-medium">Complete your profile</h3>
+                <p class="text-sm text-zinc-400">Set up your profile to auto-fill all AI tools &mdash; it takes 30 seconds.</p>
+                @if($profileCompletion > 0)
+                    <div class="w-full h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" style="width: {{ $profileCompletion }}%"></div>
+                    </div>
+                    <span class="text-xs text-zinc-500">{{ $profileCompletion }}% complete</span>
+                @endif
+            </div>
+            <flux:button href="{{ route('profile.edit') }}" variant="primary" size="sm" icon="arrow-right">
+                Set Up Profile
+            </flux:button>
+        </div>
+    @elseif($profileCompletion < 100)
+        <div class="glass-card flex items-center gap-4">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <flux:icon name="user-circle" class="w-4 h-4 text-violet-400" />
+                    <span class="text-sm text-zinc-400">Profile: {{ $profileCompletion }}%</span>
+                </div>
+                <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" style="width: {{ $profileCompletion }}%"></div>
+                </div>
+            </div>
+            <flux:button href="{{ route('profile.edit') }}" variant="subtle" size="xs">
+                Complete Profile
+            </flux:button>
+        </div>
+    @endif
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="glass-card p-4">
@@ -208,15 +253,7 @@ new class extends Component
             <h2 class="text-lg font-semibold text-white mb-4">Recent Jobs</h2>
             <div class="space-y-3">
                 @forelse($this->recentJobs as $job)
-                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                        <div>
-                            <p class="text-white font-medium">{{ $job->position }}</p>
-                            <p class="text-sm text-zinc-400">{{ $job->company }}</p>
-                        </div>
-                        <span class="px-2 py-1 text-xs rounded-full bg-{{ $job->getStatusColor() }}-500/20 text-{{ $job->getStatusColor() }}-400 capitalize">
-                            {{ $job->status }}
-                        </span>
-                    </div>
+                    <x-job-list-item :job="$job" />
                 @empty
                     <p class="text-zinc-400 text-center py-4">No job applications yet</p>
                 @endforelse
@@ -243,60 +280,7 @@ new class extends Component
                         </thead>
                         <tbody class="divide-y divide-white/5">
                             @foreach($this->recentAnalyses as $analysis)
-                                <tr class="group hover:bg-white/5 transition">
-                                    <td class="py-3">
-                                        <p class="text-white font-medium">{{ Str::limit($analysis->job_description, 40) }}</p>
-                                        <p class="text-xs text-zinc-500">
-                                            @if($analysis->strengths)
-                                                {{ count($analysis->strengths) }} strengths
-                                            @endif
-                                            @if($analysis->strengths && $analysis->weaknesses)
-                                                •
-                                            @endif
-                                            @if($analysis->weaknesses)
-                                                {{ count($analysis->weaknesses) }} improvements
-                                            @endif
-                                        </p>
-                                    </td>
-                                    <td class="py-3">
-                                        <div class="flex items-center gap-2">
-                                            <div class="score-circle w-10 h-10 relative">
-                                                <svg class="w-10 h-10 transform -rotate-90">
-                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" class="text-zinc-700" />
-                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" 
-                                                        class="{{ $analysis->getMatchScoreColor() === 'green' ? 'text-green-500' : ($analysis->getMatchScoreColor() === 'amber' ? 'text-amber-500' : 'text-red-500') }}"
-                                                        stroke-dasharray="{{ 2 * 3.14159 * 16 }}"
-                                                        stroke-dashoffset="{{ 2 * 3.14159 * 16 * (1 - $analysis->match_score / 100) }}"
-                                                        stroke-linecap="round" />
-                                                </svg>
-                                                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-                                                    {{ $analysis->match_score }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="py-3">
-                                        <div class="flex items-center gap-2">
-                                            <div class="score-circle w-10 h-10 relative">
-                                                <svg class="w-10 h-10 transform -rotate-90">
-                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" class="text-zinc-700" />
-                                                    <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" fill="none" 
-                                                        class="{{ $analysis->ats_score >= 80 ? 'text-green-500' : ($analysis->ats_score >= 50 ? 'text-amber-500' : 'text-red-500') }}"
-                                                        stroke-dasharray="{{ 2 * 3.14159 * 16 }}"
-                                                        stroke-dashoffset="{{ 2 * 3.14159 * 16 * (1 - $analysis->ats_score / 100) }}"
-                                                        stroke-linecap="round" />
-                                                </svg>
-                                                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-                                                    {{ $analysis->ats_score }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 text-right">
-                                        <p class="text-sm text-white">{{ $analysis->created_at->format('M d') }}</p>
-                                        <p class="text-xs text-zinc-500">{{ $analysis->created_at->diffForHumans() }}</p>
-                                    </td>
-                                </tr>
+                                <x-cv-analysis-row :analysis="$analysis" />
                             @endforeach
                         </tbody>
                     </table>

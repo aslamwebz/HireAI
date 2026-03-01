@@ -8,8 +8,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Validate;
 
-new class extends Component
-{
+new class extends Component {
     use WithFileUploads;
 
     public string $cvContent = '';
@@ -22,13 +21,22 @@ new class extends Component
     public string $editedContent = '';
     public ?int $selectedCvId = null;
     public string $cvMode = 'select';
+    public bool $fromProfile = false;
 
     #[Validate('file|mimes:pdf,doc,docx,txt|max:10240')]
     public $cvFile = null;
 
     public function mount(): void
     {
-        if (auth()->user()->uploadedCvs()->where('is_default', true)->exists()) {
+        $user = auth()->user();
+
+        // Auto-fill from profile if available
+        $profileText = $user->getProfileCvText();
+        if ($profileText) {
+            $this->cvContent = $profileText;
+            $this->cvMode = 'profile';
+            $this->fromProfile = true;
+        } elseif ($user->uploadedCvs()->where('is_default', true)->exists()) {
             $this->cvMode = 'select';
         }
     }
@@ -95,7 +103,7 @@ new class extends Component
 
         $this->coverLetter = $coverLetter->fresh();
         $this->status = $this->coverLetter->status === 'completed' ? 'completed' : 'failed';
-        
+
         if ($this->status === 'completed') {
             $this->editedContent = $this->coverLetter->content;
         }
@@ -182,43 +190,53 @@ new class extends Component
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-white">Your CV</h2>
                         <div class="flex gap-1">
-                            <flux:button 
-                                wire:click="$set('cvMode', 'select')" 
-                                size="xs" 
+                            @if($fromProfile)
+                                <flux:button wire:click="$set('cvMode', 'profile')" size="xs"
+                                    variant="{{ $cvMode === 'profile' ? 'primary' : 'subtle' }}"
+                                    :disabled="$status === 'creating'">
+                                    Profile
+                                </flux:button>
+                            @endif
+                            <flux:button wire:click="$set('cvMode', 'select')" size="xs"
                                 variant="{{ $cvMode === 'select' ? 'primary' : 'subtle' }}"
-                                :disabled="$status === 'creating'"
-                            >
+                                :disabled="$status === 'creating'">
                                 Select
                             </flux:button>
-                            <flux:button 
-                                wire:click="$set('cvMode', 'upload')" 
-                                size="xs" 
+                            <flux:button wire:click="$set('cvMode', 'upload')" size="xs"
                                 variant="{{ $cvMode === 'upload' ? 'primary' : 'subtle' }}"
-                                :disabled="$status === 'creating'"
-                            >
+                                :disabled="$status === 'creating'">
                                 Upload
                             </flux:button>
-                            <flux:button 
-                                wire:click="$set('cvMode', 'paste')" 
-                                size="xs" 
+                            <flux:button wire:click="$set('cvMode', 'paste')" size="xs"
                                 variant="{{ $cvMode === 'paste' ? 'primary' : 'subtle' }}"
-                                :disabled="$status === 'creating'"
-                            >
+                                :disabled="$status === 'creating'">
                                 Paste
                             </flux:button>
                         </div>
                     </div>
 
-                    @if($cvMode === 'select')
+                    @if($cvMode === 'profile')
+                        <div class="space-y-4">
+                            <div
+                                class="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+                                <flux:icon name="user-circle" class="w-4 h-4 text-violet-400" />
+                                <span class="text-sm text-violet-400">From your profile</span>
+                                <a href="{{ route('profile.edit') }}"
+                                    class="ml-auto text-xs text-violet-400 hover:text-violet-300 underline">Update profile
+                                    &nearr;</a>
+                            </div>
+                            <flux:field>
+                                <flux:textarea wire:model="cvContent" rows="10" class="font-mono text-sm" />
+                            </flux:field>
+                        </div>
+                    @elseif($cvMode === 'select')
                         <div class="space-y-4">
                             @if($this->savedCvs->isNotEmpty())
                                 <div class="space-y-2">
                                     @foreach($this->savedCvs as $savedCv)
-                                        <button
-                                            wire:click="selectSavedCv({{ $savedCv->id }})"
+                                        <button wire:click="selectSavedCv({{ $savedCv->id }})"
                                             class="w-full flex items-center gap-3 p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition text-left {{ $selectedCvId === $savedCv->id ? 'ring-2 ring-violet-500 bg-violet-500/10' : '' }}"
-                                            {{ $status === 'creating' ? 'disabled' : '' }}
-                                        >
+                                            {{ $status === 'creating' ? 'disabled' : '' }}>
                                             <div class="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
                                                 <flux:icon name="document-text" class="w-5 h-5 text-violet-400" />
                                             </div>
@@ -251,33 +269,26 @@ new class extends Component
                         </div>
                     @elseif($cvMode === 'upload')
                         <div class="space-y-4">
-                            <div 
-                                class="border-2 border-dashed border-white/20 rounded-lg p-8 text-center hover:border-violet-500/50 transition"
-                                wire:ignore
-                                x-data="{ dragging: false }"
-                                @dragover.prevent="dragging = true"
-                                @dragleave.prevent="dragging = false"
-                                @drop.prevent="dragging = false"
-                                :class="{ 'border-violet-500 bg-violet-500/10': dragging }"
-                            >
+                            <div class="border-2 border-dashed border-white/20 rounded-lg p-8 text-center hover:border-violet-500/50 transition"
+                                wire:ignore x-data="{ dragging: false }" @dragover.prevent="dragging = true"
+                                @dragleave.prevent="dragging = false" @drop.prevent="dragging = false"
+                                :class="{ 'border-violet-500 bg-violet-500/10': dragging }">
                                 <flux:icon name="cloud-arrow-up" class="w-12 h-12 mx-auto text-zinc-500 mb-3" />
                                 <p class="text-zinc-400 mb-2">Drag & drop your CV or click to browse</p>
                                 <p class="text-xs text-zinc-500">PDF, DOC, DOCX, TXT (max 10MB)</p>
-                                <input 
-                                    type="file" 
-                                    wire:model="cvFile" 
-                                    accept=".pdf,.doc,.docx,.txt"
-                                    class="mt-4 block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-violet-600 file:text-white hover:file:bg-violet-500 file:cursor-pointer"
-                                >
+                                <input type="file" wire:model="cvFile" accept=".pdf,.doc,.docx,.txt"
+                                    class="mt-4 block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-violet-600 file:text-white hover:file:bg-violet-500 file:cursor-pointer">
                             </div>
 
                             @if($cvFile)
-                                <div class="flex items-center justify-between p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                                <div
+                                    class="flex items-center justify-between p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
                                     <div class="flex items-center gap-3">
                                         <flux:icon name="document-check" class="w-5 h-5 text-green-400" />
                                         <div>
                                             <p class="text-sm text-white font-medium">{{ $cvFile->getClientOriginalName() }}</p>
-                                            <p class="text-xs text-zinc-500">{{ number_format($cvFile->getSize() / 1024, 1) }} KB extracted</p>
+                                            <p class="text-xs text-zinc-500">{{ number_format($cvFile->getSize() / 1024, 1) }} KB
+                                                extracted</p>
                                         </div>
                                     </div>
                                     <flux:button wire:click="$set('cvFile', null)" size="xs" variant="subtle" icon="x-mark" />
@@ -292,12 +303,8 @@ new class extends Component
                         </div>
                     @else
                         <flux:field>
-                            <flux:textarea
-                                wire:model="cvContent"
-                                placeholder="Paste your CV content here..."
-                                rows="10"
-                                class="font-mono text-sm"
-                            />
+                            <flux:textarea wire:model="cvContent" placeholder="Paste your CV content here..." rows="10"
+                                class="font-mono text-sm" />
                             <flux:error name="cvContent" />
                         </flux:field>
                     @endif
@@ -305,25 +312,22 @@ new class extends Component
 
                 <div class="glass-card">
                     <h2 class="text-lg font-semibold text-white mb-4">Job Description</h2>
-                    
+
                     @if($this->recentJobs->isNotEmpty())
                         <div class="mb-4">
                             <flux:select wire:model="selectedJobId" wire:change="selectJob($event.target.value)">
                                 <flux:select.option value="">Select from saved jobs...</flux:select.option>
                                 @foreach($this->recentJobs as $job)
-                                    <flux:select.option value="{{ $job->id }}">{{ $job->company }} - {{ $job->position }}</flux:select.option>
+                                    <flux:select.option value="{{ $job->id }}">{{ $job->company }} - {{ $job->position }}
+                                    </flux:select.option>
                                 @endforeach
                             </flux:select>
                         </div>
                     @endif
 
                     <flux:field>
-                        <flux:textarea
-                            wire:model="jobDescription"
-                            placeholder="Paste the job description here..."
-                            rows="6"
-                            class="font-mono text-sm"
-                        />
+                        <flux:textarea wire:model="jobDescription" placeholder="Paste the job description here..." rows="6"
+                            class="font-mono text-sm" />
                         <flux:error name="jobDescription" />
                     </flux:field>
                 </div>
@@ -336,11 +340,10 @@ new class extends Component
                         <flux:description>Choose the tone for your cover letter</flux:description>
                         <div class="grid grid-cols-2 gap-2 mt-2">
                             @foreach(CoverLetter::getTones() as $key => $name)
-                                <button
-                                    wire:click="$set('tone', '{{ $key }}')"
-                                    class="p-3 rounded-lg text-left transition {{ $tone === $key ? 'bg-violet-500/20 border border-violet-500/50' : 'bg-white/5 border border-white/10 hover:bg-white/10' }}"
-                                >
-                                    <span class="text-sm font-medium {{ $tone === $key ? 'text-violet-400' : 'text-white' }}">{{ $name }}</span>
+                                <button wire:click="$set('tone', '{{ $key }}')"
+                                    class="p-3 rounded-lg text-left transition {{ $tone === $key ? 'bg-violet-500/20 border border-violet-500/50' : 'bg-white/5 border border-white/10 hover:bg-white/10' }}">
+                                    <span
+                                        class="text-sm font-medium {{ $tone === $key ? 'text-violet-400' : 'text-white' }}">{{ $name }}</span>
                                 </button>
                             @endforeach
                         </div>
@@ -348,13 +351,8 @@ new class extends Component
                     </flux:field>
                 </div>
 
-                <flux:button 
-                    wire:click="generate" 
-                    variant="primary" 
-                    class="w-full"
-                    :disabled="$status === 'creating'"
-                    :loading="$status === 'creating'"
-                >
+                <flux:button wire:click="generate" variant="primary" class="w-full" :disabled="$status === 'creating'"
+                    :loading="$status === 'creating'">
                     <flux:icon name="sparkles" class="w-4 h-4 mr-2" />
                     {{ $status === 'creating' ? 'Generating...' : 'Generate Cover Letter' }}
                 </flux:button>
@@ -399,11 +397,7 @@ new class extends Component
 
                 @if($isEditing)
                     <div class="space-y-4">
-                        <flux:textarea
-                            wire:model="editedContent"
-                            rows="20"
-                            class="font-mono text-sm"
-                        />
+                        <flux:textarea wire:model="editedContent" rows="20" class="font-mono text-sm" />
                         <div class="flex justify-end gap-2">
                             <flux:button wire:click="cancelEdit" variant="subtle">
                                 Cancel

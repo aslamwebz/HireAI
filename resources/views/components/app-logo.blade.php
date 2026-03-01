@@ -1,3 +1,4 @@
+@blaze(fold: true)
 @props([
     'sidebar' => false,
 ])

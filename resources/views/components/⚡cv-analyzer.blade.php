@@ -23,6 +23,7 @@ new class extends Component
 
     public string $cvMode = 'select';
     public ?int $selectedCvId = null;
+    public bool $fromProfile = false;
 
     #[Validate('file|mimes:pdf,doc,docx,txt|max:10240')]
     public $cvFile = null;
@@ -34,7 +35,13 @@ new class extends Component
         $this->analysesUsed = $user->getAnalysisUsage();
         $this->analysesLimit = $user->getAnalysisLimit();
 
-        if ($user->uploadedCvs()->where('is_default', true)->exists()) {
+        // Auto-fill from profile if available
+        $profileText = $user->getProfileCvText();
+        if ($profileText) {
+            $this->cvContent = $profileText;
+            $this->cvMode = 'profile';
+            $this->fromProfile = true;
+        } elseif ($user->uploadedCvs()->where('is_default', true)->exists()) {
             $this->cvMode = 'select';
         }
     }
@@ -156,6 +163,16 @@ new class extends Component
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-white">Your CV</h2>
                     <div class="flex gap-1">
+                        @if($fromProfile)
+                            <flux:button 
+                                wire:click="$set('cvMode', 'profile')" 
+                                size="xs" 
+                                variant="{{ $cvMode === 'profile' ? 'primary' : 'subtle' }}"
+                                :disabled="$status === 'creating'"
+                            >
+                                Profile
+                            </flux:button>
+                        @endif
                         <flux:button 
                             wire:click="$set('cvMode', 'select')" 
                             size="xs" 
@@ -183,7 +200,22 @@ new class extends Component
                     </div>
                 </div>
 
-                @if($cvMode === 'select')
+                @if($cvMode === 'profile')
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+                            <flux:icon name="user-circle" class="w-4 h-4 text-violet-400" />
+                            <span class="text-sm text-violet-400">From your profile</span>
+                            <a href="{{ route('profile.edit') }}" class="ml-auto text-xs text-violet-400 hover:text-violet-300 underline">Update profile &nearr;</a>
+                        </div>
+                        <flux:field>
+                            <flux:textarea
+                                wire:model="cvContent"
+                                rows="10"
+                                class="font-mono text-sm"
+                            />
+                        </flux:field>
+                    </div>
+                @elseif($cvMode === 'select')
                     <div class="space-y-4" {{ $status === 'creating' ? 'wire:loading.remove' : '' }}>
                         @if($this->savedCvs->isNotEmpty())
                             <div class="space-y-2">

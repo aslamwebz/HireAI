@@ -4,12 +4,11 @@ use App\Models\JobApplication;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
-new class extends Component
-{
+new class extends Component {
     public bool $showModal = false;
     public bool $editing = false;
     public ?int $editingId = null;
-    
+
     public string $company = '';
     public string $position = '';
     public string $job_description = '';
@@ -106,7 +105,7 @@ new class extends Component
     public function edit($id): void
     {
         $job = auth()->user()->jobApplications()->findOrFail($id);
-        
+
         $this->editing = true;
         $this->editingId = $job->id;
         $this->company = $job->company;
@@ -121,7 +120,7 @@ new class extends Component
         $this->applied_at = $job->applied_at?->format('Y-m-d');
         $this->deadline_at = $job->deadline_at?->format('Y-m-d');
         $this->notes = $job->notes ?? '';
-        
+
         $this->showModal = true;
     }
 
@@ -166,39 +165,12 @@ new class extends Component
                     <h3 class="font-medium text-white">{{ $statusLabel }}</h3>
                     <span class="text-xs text-zinc-400">{{ ($this->jobs[$statusKey] ?? collect())->count() }}</span>
                 </div>
-                
-                <div 
-                    class="space-y-2 min-h-[200px] p-2 rounded-lg bg-white/[0.02] border border-white/5"
-                    wire:sortable
+
+                <div class="space-y-2 min-h-[200px] p-2 rounded-lg bg-white/[0.02] border border-white/5" wire:sortable
                     wire:sortable.group="jobs"
-                    wire:sortable.options="{ animation: 150, group: { name: 'jobs', put: true, pull: true } }"
-                >
+                    wire:sortable.options="{ animation: 150, group: { name: 'jobs', put: true, pull: true } }">
                     @forelse($this->jobs[$statusKey] ?? [] as $job)
-                        <div 
-                            wire:key="job-{{ $job->id }}"
-                            wire:sortable.item="{{ $job->id }}"
-                            class="glass-card p-3 cursor-pointer hover:bg-white/10 transition"
-                            wire:click="edit({{ $job->id }})"
-                        >
-                            <div class="flex items-start justify-between mb-2">
-                                <h4 class="font-medium text-white text-sm">{{ $job->position }}</h4>
-                            </div>
-                            <p class="text-xs text-zinc-400 mb-2">{{ $job->company }}</p>
-                            
-                            @if($job->location || $job->remote)
-                                <div class="flex items-center gap-1 text-xs text-zinc-500">
-                                    <flux:icon name="map-pin" class="w-3 h-3" />
-                                    <span>{{ $job->remote ? 'Remote' : $job->location }}</span>
-                                </div>
-                            @endif
-                            
-                            @if($job->deadline_at)
-                                <div class="flex items-center gap-1 text-xs mt-2 {{ $job->deadline_at->isPast() ? 'text-red-400' : 'text-zinc-500' }}">
-                                    <flux:icon name="calendar" class="w-3 h-3" />
-                                    <span>{{ $job->deadline_at->format('M j') }}</span>
-                                </div>
-                            @endif
-                        </div>
+                        <x-job-card :job="$job" :wire:key="'job-'.$job->id" :wire:sortable.item="$job->id" />
                     @empty
                         <div class="text-center py-8 text-zinc-500 text-sm">
                             No jobs

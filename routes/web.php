@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CvAnalysisController;
+use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,14 +18,39 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('cv-analysis/{cvAnalysis}', [CvAnalysisController::class, 'destroy'])->name('cv-analysis.destroy');
     Route::view('cover-letter', 'cover-letter')->name('cover-letter');
     Route::view('jobs', 'jobs')->name('jobs.index');
+    Route::view('jobs/{jobApplication}', 'jobs.show')->name('jobs.show');
     Route::view('interview-prep', 'interview-prep')->name('interview-prep');
     Route::view('pricing', 'pricing')->name('pricing');
 
     Route::post('subscription/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
     Route::get('subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
     Route::get('subscription/billing', [SubscriptionController::class, 'billing'])->name('subscription.billing');
+
+    Route::prefix('resumes')->name('resumes.')->group(function () {
+        Route::get('/', [ResumeController::class, 'index'])->name('index');
+        Route::get('create', [ResumeController::class, 'create'])->name('create');
+        Route::post('/', [ResumeController::class, 'store'])->name('store');
+        Route::post('parse', [ResumeController::class, 'parseUpload'])->name('parse');
+        Route::get('{resume}', [ResumeController::class, 'show'])->name('show');
+        Route::get('{resume}/edit', [ResumeController::class, 'edit'])->name('edit');
+        Route::put('{resume}', [ResumeController::class, 'update'])->name('update');
+        Route::delete('{resume}', [ResumeController::class, 'destroy'])->name('destroy');
+        Route::get('{resume}/download', [ResumeController::class, 'download'])->name('download');
+        Route::get('{resume}/preview', [ResumeController::class, 'preview'])->name('preview');
+        Route::post('{resume}/duplicate', [ResumeController::class, 'duplicate'])->name('duplicate');
+        Route::post('{resume}/primary', [ResumeController::class, 'setPrimary'])->name('primary');
+        Route::post('{resume}/versions/{version}/restore', [ResumeController::class, 'restoreVersion'])->name('versions.restore');
+        Route::post('{resume}/optimize', [ResumeController::class, 'optimize'])->name('optimize');
+        Route::post('{resume}/optimize-ats', [ResumeController::class, 'optimizeForAts'])->name('optimize-ats');
+    });
+
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ResumeController::class, 'getProfile'])->name('show');
+        Route::put('/', [ResumeController::class, 'updateProfile'])->name('update');
+        Route::post('import', [ResumeController::class, 'importProfileFromUpload'])->name('import');
+    });
 });
 
 Route::post('stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
