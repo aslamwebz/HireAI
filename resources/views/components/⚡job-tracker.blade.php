@@ -134,6 +134,10 @@ new class extends Component {
         $job = auth()->user()->jobApplications()->find($data['jobId']);
         if ($job) {
             $job->update(['status' => $data['status']]);
+
+            if ($data['status'] === 'interview') {
+                \App\Jobs\GenerateInterviewPrep::dispatch($job);
+            }
         }
     }
 
@@ -142,6 +146,10 @@ new class extends Component {
         $job = auth()->user()->jobApplications()->find($jobId);
         if ($job) {
             $job->update(['status' => $newStatus]);
+
+            if ($newStatus === 'interview') {
+                \App\Jobs\GenerateInterviewPrep::dispatch($job);
+            }
         }
     }
 };

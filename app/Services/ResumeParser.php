@@ -31,24 +31,12 @@ class ResumeParser
 
     protected function extractProfileData(string $text): array
     {
-        $lines = array_map('trim', preg_split('/\r\n|\r|\n/', $text));
-        $lines = array_filter($lines);
+        if (empty($text)) {
+            return [];
+        }
 
-        return [
-            'personal' => $this->extractPersonalInfo($lines, $text),
-            'professional_summary' => $this->extractSummary($text),
-            'social_links' => $this->extractSocialLinks($text),
-            'work_experience' => $this->extractWorkExperience($text),
-            'education' => $this->extractEducation($text),
-            'skills' => $this->extractSkills($text),
-            'certifications' => $this->extractCertifications($text),
-            'languages' => $this->extractLanguages($text),
-            'projects' => [],
-            'awards' => $this->extractAwards($text),
-            'publications' => [],
-            'volunteer_work' => [],
-            'references' => [],
-        ];
+        $aiService = app(AiService::class, ['user' => auth()->user()]);
+        return $aiService->extractProfileFromText($text);
     }
 
     protected function extractPersonalInfo(array $lines, string $text): array
@@ -88,7 +76,7 @@ class ResumeParser
             if (! in_array($domain, ['linkedin.com', 'github.com', 'twitter.com', 'x.com'])) {
                 $data['website'] = $matches[0];
                 if (! str_starts_with($data['website'], 'http')) {
-                    $data['website'] = 'https://'.$data['website'];
+                    $data['website'] = 'https://' . $data['website'];
                 }
             }
         }
@@ -128,9 +116,9 @@ class ResumeParser
         $domains = Arr::wrap($domains);
 
         foreach ($domains as $domain) {
-            $pattern = '/https?:\/\/(?:www\.)?'.preg_quote($domain, '/').'([a-zA-Z0-9_-]+)/i';
+            $pattern = '/https?:\/\/(?:www\.)?' . preg_quote($domain, '/') . '([a-zA-Z0-9_-]+)/i';
             if (preg_match($pattern, $text, $matches)) {
-                return 'https://'.$domain.$matches[1];
+                return 'https://' . $domain . $matches[1];
             }
         }
 

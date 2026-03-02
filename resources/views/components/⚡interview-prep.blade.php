@@ -1,6 +1,5 @@
 <?php
 
-use App\Jobs\ProcessInterviewPrep;
 use App\Models\InterviewPrep as InterviewPrepModel;
 use App\Models\InterviewQuestion;
 use App\Models\UploadedCv;
@@ -9,6 +8,7 @@ use App\Services\CvTextExtractor;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Validate;
+use Prism\Prism\Streaming\Events\TextDeltaEvent;
 
 new class extends Component {
     use WithFileUploads;
@@ -104,15 +104,50 @@ new class extends Component {
             'status' => 'pending',
         ]);
 
-        ProcessInterviewPrep::dispatchSync($interviewPrep);
+        $this->interviewPrep = $interviewPrep;
+        $this->status = 'streaming';
 
-        $this->interviewPrep = $interviewPrep->fresh();
+        $this->js('$wire.streamGeneration()');
+    }
 
-        if ($this->interviewPrep->status === 'completed') {
+    public function streamGeneration(): void
+    {
+        if (!$this->interviewPrep)
+            return;
+
+        $aiService = app(AiService::class, ['user' => auth()->user()]);
+
+        try {
+            $stream = $aiService->generateInterviewQuestionsStream(
+                $this->interviewPrep->job_description,
+                $this->interviewPrep->cv_content,
+                $this->interviewPrep->focus_area
+            );
+
+            $fullContent = '';
+
+            foreach ($stream as $event) {
+                if ($event instanceof TextDeltaEvent) {
+                    $fullContent .= $event->delta;
+                    $this->stream(to: 'prepContent', content: $event->delta, replace: false);
+                }
+            }
+
+            $parsedQuestions = $aiService->parseMarkdownQuestionsResponse($fullContent);
+
+            foreach ($parsedQuestions as $q) {
+                $this->interviewPrep->questions()->create(['question' => $q]);
+            }
+
+            $this->interviewPrep->update(['status' => 'completed']);
+            $this->interviewPrep->refresh();
+
             $this->status = 'ready';
             $this->currentQuestionIndex = 0;
-        } else {
+        } catch (\Exception $e) {
+            $this->interviewPrep->update(['status' => 'failed']);
             $this->status = 'failed';
+            session()->flash('error', 'Failed to generate questions: ' . $e->getMessage());
         }
     }
 
@@ -416,8 +451,22 @@ new class extends Component {
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-500/20 mb-4 animate-pulse">
                 <flux:icon name="chat-bubble-left-right" class="w-8 h-8 text-violet-400" />
             </div>
-            <h2 class="text-xl font-semibold text-white mb-2">Generating Questions...</h2>
-            <p class="text-zinc-400">Creating personalized interview questions</p>
+            <h2 class="text-xl font-semibold text-white mb-2">Preparing...</h2>
+            <p class="text-zinc-400">Initializing AI generation</p>
+        </div>
+    @endif
+
+    @if($status === 'streaming')
+        <div class="glass-card pb-8">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-violet-500/20 animate-pulse">
+                    <flux:icon name="sparkles" class="w-5 h-5 text-violet-400" />
+                </div>
+                <h2 class="text-xl font-semibold text-white">Generating Questions...</h2>
+            </div>
+            <div class="prose prose-invert max-w-none">
+                <div class="whitespace-pre-line text-zinc-300 leading-relaxed font-mono" wire:stream="prepContent"></div>
+            </div>
         </div>
     @endif
 

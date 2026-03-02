@@ -3,10 +3,12 @@
 use App\Jobs\ProcessCoverLetter;
 use App\Models\CoverLetter;
 use App\Models\UploadedCv;
+use App\Services\AiService;
 use App\Services\CvTextExtractor;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Validate;
+use Prism\Prism\Streaming\Events\TextDeltaEvent;
 
 new class extends Component {
     use WithFileUploads;
@@ -99,32 +101,55 @@ new class extends Component {
             'status' => 'pending',
         ]);
 
-        ProcessCoverLetter::dispatchSync($coverLetter);
+        $this->coverLetter = $coverLetter;
+        $this->editedContent = '';
+        $this->status = 'streaming';
 
-        $this->coverLetter = $coverLetter->fresh();
-        $this->status = $this->coverLetter->status === 'completed' ? 'completed' : 'failed';
+        $this->js('$wire.streamGeneration()');
+    }
 
-        if ($this->status === 'completed') {
-            $this->editedContent = $this->coverLetter->content;
+    public function streamGeneration(): void
+    {
+        if (!$this->coverLetter)
+            return;
+
+        $aiService = app(AiService::class, ['user' => auth()->user()]);
+
+        try {
+            $stream = $aiService->generateCoverLetterStream(
+                $this->coverLetter->cv_content,
+                $this->coverLetter->job_description,
+                $this->coverLetter->tone
+            );
+
+            $fullContent = '';
+
+            foreach ($stream as $event) {
+                if ($event instanceof TextDeltaEvent) {
+                    $fullContent .= $event->delta;
+                    $this->stream(to: 'coverLetterContent', content: $event->delta, replace: false);
+                }
+            }
+
+            $this->coverLetter->update([
+                'content' => $fullContent,
+                'status' => 'completed',
+            ]);
+
+            $this->editedContent = $fullContent;
+            $this->status = 'completed';
+        } catch (\Exception $e) {
+            $this->coverLetter->update([
+                'status' => 'failed',
+                'content' => $e->getMessage(),
+            ]);
+            $this->status = 'failed';
         }
     }
 
     public function pollGeneration(): void
     {
-        if (!$this->coverLetter) {
-            return;
-        }
-
-        $this->coverLetter->refresh();
-
-        if ($this->coverLetter->status === 'completed') {
-            $this->status = 'completed';
-            $this->editedContent = $this->coverLetter->content;
-        } elseif ($this->coverLetter->status === 'failed') {
-            $this->status = 'failed';
-        } else {
-            $this->status = 'processing';
-        }
+        // No longer needed due to streaming
     }
 
     public function startEditing(): void
@@ -148,22 +173,8 @@ new class extends Component {
 
     public function regenerate(): void
     {
-        $this->status = 'creating';
         $this->isEditing = false;
-
-        $coverLetter = CoverLetter::create([
-            'user_id' => auth()->id(),
-            'job_application_id' => $this->selectedJobId,
-            'cv_content' => $this->cvContent,
-            'job_description' => $this->jobDescription,
-            'tone' => $this->tone,
-            'status' => 'pending',
-        ]);
-
-        ProcessCoverLetter::dispatch($coverLetter);
-
-        $this->coverLetter = $coverLetter;
-        $this->status = 'processing';
+        $this->generate();
     }
 
     public function resetGenerator(): void
@@ -365,12 +376,12 @@ new class extends Component {
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-violet-500/20 mb-4 animate-pulse">
                 <flux:icon name="document-text" class="w-8 h-8 text-violet-400" />
             </div>
-            <h2 class="text-xl font-semibold text-white mb-2">Generating Your Cover Letter...</h2>
-            <p class="text-zinc-400">Creating a personalized cover letter based on your CV and the job</p>
+            <h2 class="text-xl font-semibold text-white mb-2">Preparing...</h2>
+            <p class="text-zinc-400">Initializing AI generation</p>
         </div>
     @endif
 
-    @if($status === 'completed' && $coverLetter)
+    @if(($status === 'streaming' || $status === 'completed') && $coverLetter)
         <div class="space-y-6">
             <div class="flex items-center justify-between">
                 <flux:button wire:click="resetGenerator" variant="subtle" icon="arrow-left">
@@ -395,7 +406,7 @@ new class extends Component {
                     </span>
                 </div>
 
-                @if($isEditing)
+                @if($isEditing && $status === 'completed')
                     <div class="space-y-4">
                         <flux:textarea wire:model="editedContent" rows="20" class="font-mono text-sm" />
                         <div class="flex justify-end gap-2">
@@ -409,9 +420,14 @@ new class extends Component {
                     </div>
                 @else
                     <div class="prose prose-invert max-w-none">
-                        <div class="whitespace-pre-line text-zinc-300 leading-relaxed">
-                            {{ $coverLetter->content }}
-                        </div>
+                        @if($status === 'streaming')
+                            <div class="whitespace-pre-line text-zinc-300 leading-relaxed font-mono"
+                                wire:stream="coverLetterContent"></div>
+                        @else
+                            <div class="whitespace-pre-line text-zinc-300 leading-relaxed">
+                                {{ $coverLetter->content }}
+                            </div>
+                        @endif
                     </div>
                 @endif
             </div>
