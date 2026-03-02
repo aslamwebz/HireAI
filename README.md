@@ -1,29 +1,94 @@
-# Laravel + Livewire Starter Kit
+# HireAI 🚀
 
-## Introduction
+**The Ultimate AI-Powered Job Application Suite**
 
-Our Laravel + [Livewire](https://livewire.laravel.com) starter kit provides a robust, modern starting point for building Laravel applications with a Livewire frontend.
+HireAI is a modern, high-performance platform designed to streamline your job search and career growth. Built with the latest Laravel ecosystem, it leverages AI to help you build stunning resumes, optimize them for ATS, analyze your CV, and prepare for interviews.
 
-Livewire is a powerful way of building dynamic, reactive, frontend UIs using just PHP. It's a great fit for teams that primarily use Blade templates and are looking for a simpler alternative to JavaScript-driven SPA frameworks like React and Vue.
+![HireAI Dashboard](file:///c:/Users/Em/Herd/hireai/public/images/dashboard-preview.png) _(Note: Add actual dashboard screenshot here)_
 
-This Livewire starter kit utilizes Livewire 4, TypeScript, Tailwind, and the [Flux UI](https://fluxui.dev) component library.
+---
 
-If you are looking for the alternate configurations of this starter kit, they can be found in the following branches:
+## ✨ Key Features
 
-- [workos](https://github.com/laravel/livewire-starter-kit/tree/workos) - if WorkOS is selected for authentication
+- **📄 Smart Resume Builder**: Create professional resumes with real-time previews using premium Flux UI components.
+- **🤖 AI Content Optimization**: Enhance your resume's impact with AI-powered suggestions for your work experience bullet points.
+- **📊 ATS & Keyword Optimization**: Tailor your resume specifically for a job description to improve your ATS ranking.
+- **🔍 CV Deep Analysis**: Upload your existing CV and get detailed feedback on readability, impact, and missing skills.
+- **✉️ Cover Letter Generator**: Generate personalized, high-converting cover letters for every application.
+- **💼 Job Tracker**: Organize your job applications, interviews, and follow-ups in one centralized dashboard.
+- **🎙️ Interview Preparation**: Get AI-generated interview questions and practice your answers based on specific job roles.
 
-## Official Documentation
+---
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+## 🛠️ Technology Stack
 
-## Contributing
+| Category           | Technology                                                                                                   |
+| :----------------- | :----------------------------------------------------------------------------------------------------------- |
+| **Backend**        | [Laravel 12](https://laravel.com)                                                                            |
+| **Frontend**       | [Livewire 4](https://livewire.laravel.com), [Flux UI](https://fluxui.dev), [Alpine.js](https://alpinejs.dev) |
+| **Styling**        | [Tailwind CSS 4](https://tailwindcss.com)                                                                    |
+| **Database**       | SQLite / MySQL                                                                                               |
+| **Testing**        | [Pest 4](https://pestphp.com)                                                                                |
+| **AI Integration** | OpenAI / Anthropic Integration via `laravel/ai`                                                              |
+| **Payment**        | [Stripe](https://stripe.com)                                                                                 |
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 🚀 Getting Started
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Prerequisites
 
-## License
+- **PHP**: ^8.2 (8.4 recommended)
+- **Database**: SQLite (default), MySQL, or PostgreSQL
+- **Environment**: [Laravel Herd](https://herd.laravel.com) (Recommended for local development)
 
-The Laravel + Livewire starter kit is open-sourced software licensed under the MIT license.
+### Installation
+
+1. **Clone the repository**:
+
+    ```bash
+    git clone https://github.com/your-username/hireai.git
+    cd hireai
+    ```
+
+2. **Run the setup command**:
+   This command installs dependencies, sets up your `.env` file, generates keys, and migrates the database.
+
+    ```bash
+    composer run setup
+    ```
+
+3. **Configure AI Keys**:
+   Edit your `.env` file and add your AI provider credentials:
+
+    ```env
+    AI_PROVIDER=openai # or anthropic
+    OPENAI_API_KEY=your_key_here
+    ```
+
+4. **Start the development server**:
+    ```bash
+    composer run dev
+    ```
+
+Visit `http://hireai.test` (if using Herd) or the output URL from the dev server.
+
+---
+
+## 🧪 Testing & Linting
+
+HireAI maintains high code quality with automated tests and formatting guides.
+
+```bash
+# Run all tests
+composer test
+
+# Run linting (Laravel Pint)
+composer lint
+```
+
+---
+
+## 📄 License
+
+The HireAI platform is open-sourced software licensed under the [MIT license](LICENSE).
