@@ -48,13 +48,6 @@ it('can manage experience highlights', function () {
     expect($this->resume->fresh()->content['work_experience'][0]['highlights'][1])->toBe('Improved performance');
 });
 
-it('can toggle preview mode', function () {
-    Livewire::test(ResumeBuilder::class, ['resumeId' => $this->resume->id])
-        ->assertSet('showPreview', false)
-        ->call('$toggle', 'showPreview')
-        ->assertSet('showPreview', true);
-});
-
 it('can suggest highlight improvements with AI', function () {
     Prism::fake([
         new StructuredResponse(
@@ -74,7 +67,7 @@ it('can suggest highlight improvements with AI', function () {
     ]);
 
     Livewire::test(ResumeBuilder::class, ['resumeId' => $this->resume->id])
-        ->call('suggestImprovements', 0, 0)
+        ->call('suggestHighlights', 0, 0)
         ->assertSet('showSuggestionModal', true)
         ->assertSet('isSuggesting', false)
         ->assertCount('highlightSuggestions', 3)

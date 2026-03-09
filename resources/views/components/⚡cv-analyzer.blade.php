@@ -89,7 +89,7 @@ new class extends Component
     public function analyze(): void
     {
         $key = 'ai_generate:' . auth()->id();
-        if (RateLimiter::tooManyRequests($key, 5)) {
+        if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             session()->flash('error', "Too many requests. Please try again in {$seconds} seconds.");
             return;

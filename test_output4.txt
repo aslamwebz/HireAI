@@ -1,0 +1,28 @@
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\ResumeBuilderTest[39m
+  [32;1m✓[39;22m[90m [39m[90mit can swi[39m[90m…[39m [90m1.37s[39m  
+  [32;1m✓[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.70s[39m  
+  [32;1m✓[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.67s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can sug[39m[90m…[39m [90m0.62s[39m  
+  [31m───────────────────[39m  
+  [41;1m F[49;22m… [41;1m ViewException [49;22m  
+[39;1m  addslashes(): Argument #1 ($string) must be of type string, array given (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php)[39;22m
+
+  at [32mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39m:[32m1181[39m
+    1177▕                 <?php else: ?>
+    1178▕                     <div class="space-y-3">
+    1179▕                         <p class="text-xs text-zinc-500 uppercase tracking-widest">Suggested Improvements</p>
+    1180▕                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $highlightSuggestions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $suggestion): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoop($loop->index); ?><?php endif; ?>
+  ➜ 1181▕                             <button type="button" wire:click="applySuggestion('<?php echo e(addslashes($suggestion)); ?>')"
+    1182▕                                 class="w-full p-4 bg-zinc-800/50 hover:bg-violet-500/10 border border-white/5 hover:border-violet-500/50 rounded-xl text-left transition relative group">
+    1183▕                                 <p class="text-sm text-zinc-300 group-hover:text-white"><?php echo e($suggestion); ?></p>
+    1184▕                                 <div class="absolute inset-y-0 right-4 flex items-center opacity-0 group-hover:opacity-100">
+    1185▕                                     <svg class="shrink-0 [:where(&amp;)]:size-6 w-5 h-5 text-violet-400" data-flux-icon xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
+
+  [33m1   [39m[39;1mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39;22m:[39;1m1181[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\ExtendBlade\ExtendedCompilerEngine.php[39;22m:[39;1m37[39;22m
+
+
+  [90mTests:[39m    [31;1m1 failed[39;22m[90m,[39m[39m [39m[32;1m3 passed[39;22m[90m (7 assertions)[39m
+  [90mDuration:[39m [39m3.85s[39m
+

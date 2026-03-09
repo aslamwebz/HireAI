@@ -93,7 +93,7 @@ new class extends Component {
     public function generate(): void
     {
         $key = 'ai_generate:' . auth()->id();
-        if (RateLimiter::tooManyRequests($key, 5)) {
+        if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             session()->flash('error', "Too many requests. Please try again in {$seconds} seconds.");
             return;
@@ -478,7 +478,8 @@ new class extends Component {
             <p class="text-zinc-400 mb-2">{{ $coverLetter?->content ?? 'Something went wrong. Please try again.' }}</p>
             @if($coverLetter?->error_message)
                 <p class="text-xs text-red-400/80 font-mono mb-6 bg-red-500/10 p-2 rounded-lg inline-block">
-                    {{ $coverLetter->error_message }}</p>
+                    {{ $coverLetter->error_message }}
+                </p>
             @else
                 <div class="mb-6"></div>
             @endif

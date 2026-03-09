@@ -1,0 +1,47 @@
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\ResumeBuilderTest[39m
+  [32;1m✓[39;22m[90m [39m[90mit can swi[39m[90m…[39m [90m1.20s[39m  
+  [32;1m✓[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.52s[39m  
+  [32;1m✓[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.55s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can tog[39m[90m…[39m [90m0.43s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can sug[39m[90m…[39m [90m0.36s[39m  
+  [31m───────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\ResumeBuilderTest[22m [90m>[39m it can toggle preview mode [41;1m MethodNotFoundException [49;22m  
+[39;1m  Unable to call component method. Public method [$toggle] not found on component[39;22m
+
+  at [32mvendor\livewire\livewire\src\Mechanisms\HandleComponents\HandleComponents.php[39m:[32m637[39m
+    633▕             // @todo: put this in a better place:
+    634▕             $methods[] = '__dispatch';
+    635▕ 
+    636▕             if (! in_array($method, $methods)) {
+  ➜ 637▕                 throw new MethodNotFoundException($method);
+    638▕             }
+    639▕ 
+    640▕             if (config('app.debug')) $start = microtime(true);
+    641▕             $return = wrap($root)->{$method}(...$params);
+
+  [33m1   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\HandleComponents\HandleComponents.php[39;22m:[39;1m637[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\HandleComponents\HandleComponents.php[39;22m:[39;1m220[39;22m
+
+  [31m───────────────────[39m  
+  [41;1m FAILED [49;22m [1mTests\Feature\ResumeBuilderTest[22m [90m>[39m it can suggest highlight improvements with AI [41;1m MethodNotFoundException [49;22m  
+[39;1m  Unable to call component method. Public method [suggestImprovements] not found on component[39;22m
+
+  at [32mvendor\livewire\livewire\src\Mechanisms\HandleComponents\HandleComponents.php[39m:[32m637[39m
+    633▕             // @todo: put this in a better place:
+    634▕             $methods[] = '__dispatch';
+    635▕ 
+    636▕             if (! in_array($method, $methods)) {
+  ➜ 637▕                 throw new MethodNotFoundException($method);
+    638▕             }
+    639▕ 
+    640▕             if (config('app.debug')) $start = microtime(true);
+    641▕             $return = wrap($root)->{$method}(...$params);
+
+  [33m1   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\HandleComponents\HandleComponents.php[39;22m:[39;1m637[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\HandleComponents\HandleComponents.php[39;22m:[39;1m220[39;22m
+
+
+  [90mTests:[39m    [31;1m2 failed[39;22m[90m,[39m[39m [39m[32;1m3 passed[39;22m[90m (8 assertions)[39m
+  [90mDuration:[39m [39m3.45s[39m
+

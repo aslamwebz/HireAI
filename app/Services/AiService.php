@@ -466,7 +466,7 @@ PROMPT;
             ->withSchema($schema)
             ->generate();
 
-        return $response->structured;
+        return $response->structured['improvements'] ?? [];
     }
 
     public function extractProfileFromText(string $rawText): array

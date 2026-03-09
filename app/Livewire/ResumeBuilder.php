@@ -108,7 +108,7 @@ class ResumeBuilder extends Component
         ]);
 
         $key = 'ai_generate:' . auth()->id();
-        if (RateLimiter::tooManyRequests($key, 10)) {
+        if (RateLimiter::tooManyAttempts($key, 10)) {
             $seconds = RateLimiter::availableIn($key);
             $this->optimizationNotes = "Too many AI requests. Please try again in {$seconds} seconds.";
             $this->optimizationStatus = 'failed';
@@ -150,7 +150,7 @@ class ResumeBuilder extends Component
         ]);
 
         $key = 'ai_generate:' . auth()->id();
-        if (RateLimiter::tooManyRequests($key, 10)) {
+        if (RateLimiter::tooManyAttempts($key, 10)) {
             $seconds = RateLimiter::availableIn($key);
             $this->optimizationNotes = "Too many AI requests. Please try again in {$seconds} seconds.";
             $this->optimizationStatus = 'failed';
@@ -282,7 +282,7 @@ class ResumeBuilder extends Component
     public function suggestHighlights(int $experienceIndex, ?int $highlightIndex = null): void
     {
         $key = 'ai_generate:' . auth()->id();
-        if (RateLimiter::tooManyRequests($key, 20)) {
+        if (RateLimiter::tooManyAttempts($key, 20)) {
             $seconds = RateLimiter::availableIn($key);
             $this->highlightSuggestions = ["Rate limit exceeded. Try again in {$seconds}s."];
             $this->showSuggestionModal = true;

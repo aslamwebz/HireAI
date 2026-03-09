@@ -1,0 +1,101 @@
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\ResumeBuilderTest[39m
+  [31;1m⨯[39;22m[90m [39m[90mit can swi[39m[90m…[39m [90m1.07s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.29s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.28s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can tog[39m[90m…[39m [90m0.32s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can sug[39m[90m…[39m [90m0.28s[39m  
+  [31m───────────────────[39m  
+  [41;1m F[49;22m… [41;1m ViewException [49;22m  
+[39;1m  syntax error, unexpected token "else", expecting end of file (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php) (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php)[39;22m
+
+  at [32mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39m:[32m1156[39m
+    1152▕                         </div>
+    1153▕                     </div>
+    1154▕                 </div>
+    1155▕                 </div>
+  ➜ 1156▕             <?php else: ?>
+    1157▕                 <div class="glass-card">
+    1158▕                     <h2 class="text-lg font-semibold text-white mb-4">Template Overview</h2>
+    1159▕                     <div
+    1160▕                         class="aspect-[8.5/11] bg-zinc-900 rounded-lg flex items-center justify-center border border-white/5">
+
+  [33m1   [39m[39;1mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39;22m:[39;1m1156[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\ExtendBlade\ExtendedCompilerEngine.php[39;22m:[39;1m58[39;22m
+
+  [31m───────────────────[39m  
+  [41;1m F[49;22m… [41;1m ViewException [49;22m  
+[39;1m  syntax error, unexpected token "else", expecting end of file (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php) (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php)[39;22m
+
+  at [32mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39m:[32m1156[39m
+    1152▕                         </div>
+    1153▕                     </div>
+    1154▕                 </div>
+    1155▕                 </div>
+  ➜ 1156▕             <?php else: ?>
+    1157▕                 <div class="glass-card">
+    1158▕                     <h2 class="text-lg font-semibold text-white mb-4">Template Overview</h2>
+    1159▕                     <div
+    1160▕                         class="aspect-[8.5/11] bg-zinc-900 rounded-lg flex items-center justify-center border border-white/5">
+
+  [33m1   [39m[39;1mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39;22m:[39;1m1156[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\ExtendBlade\ExtendedCompilerEngine.php[39;22m:[39;1m58[39;22m
+
+  [31m───────────────────[39m  
+  [41;1m F[49;22m… [41;1m ViewException [49;22m  
+[39;1m  syntax error, unexpected token "else", expecting end of file (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php) (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php)[39;22m
+
+  at [32mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39m:[32m1156[39m
+    1152▕                         </div>
+    1153▕                     </div>
+    1154▕                 </div>
+    1155▕                 </div>
+  ➜ 1156▕             <?php else: ?>
+    1157▕                 <div class="glass-card">
+    1158▕                     <h2 class="text-lg font-semibold text-white mb-4">Template Overview</h2>
+    1159▕                     <div
+    1160▕                         class="aspect-[8.5/11] bg-zinc-900 rounded-lg flex items-center justify-center border border-white/5">
+
+  [33m1   [39m[39;1mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39;22m:[39;1m1156[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\ExtendBlade\ExtendedCompilerEngine.php[39;22m:[39;1m58[39;22m
+
+  [31m───────────────────[39m  
+  [41;1m F[49;22m… [41;1m ViewException [49;22m  
+[39;1m  syntax error, unexpected token "else", expecting end of file (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php) (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php)[39;22m
+
+  at [32mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39m:[32m1156[39m
+    1152▕                         </div>
+    1153▕                     </div>
+    1154▕                 </div>
+    1155▕                 </div>
+  ➜ 1156▕             <?php else: ?>
+    1157▕                 <div class="glass-card">
+    1158▕                     <h2 class="text-lg font-semibold text-white mb-4">Template Overview</h2>
+    1159▕                     <div
+    1160▕                         class="aspect-[8.5/11] bg-zinc-900 rounded-lg flex items-center justify-center border border-white/5">
+
+  [33m1   [39m[39;1mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39;22m:[39;1m1156[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\ExtendBlade\ExtendedCompilerEngine.php[39;22m:[39;1m58[39;22m
+
+  [31m───────────────────[39m  
+  [41;1m F[49;22m… [41;1m ViewException [49;22m  
+[39;1m  syntax error, unexpected token "else", expecting end of file (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php) (View: C:\Users\Em\Herd\hireai\resources\views\components\⚡resume-builder.blade.php)[39;22m
+
+  at [32mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39m:[32m1156[39m
+    1152▕                         </div>
+    1153▕                     </div>
+    1154▕                 </div>
+    1155▕                 </div>
+  ➜ 1156▕             <?php else: ?>
+    1157▕                 <div class="glass-card">
+    1158▕                     <h2 class="text-lg font-semibold text-white mb-4">Template Overview</h2>
+    1159▕                     <div
+    1160▕                         class="aspect-[8.5/11] bg-zinc-900 rounded-lg flex items-center justify-center border border-white/5">
+
+  [33m1   [39m[39;1mstorage\framework\views\52abe58e11a4036841b13326dd109701.php[39;22m:[39;1m1156[39;22m
+  [33m2   [39m[39;1mvendor\livewire\livewire\src\Mechanisms\ExtendBlade\ExtendedCompilerEngine.php[39;22m:[39;1m58[39;22m
+
+
+  [90mTests:[39m    [31;1m5 failed[39;22m[90m (0 assertions)[39m
+  [90mDuration:[39m [39m2.60s[39m
+

@@ -311,19 +311,6 @@
                         </div>
                     </div>
                 </div>
-                </div>
-            @else
-                <div class="glass-card">
-                    <h2 class="text-lg font-semibold text-white mb-4">Template Overview</h2>
-                    <div
-                        class="aspect-[8.5/11] bg-zinc-900 rounded-lg flex items-center justify-center border border-white/5">
-                        <div class="text-center p-4">
-                            <flux:icon name="document-text" class="w-12 h-12 mx-auto mb-2 text-zinc-700" />
-                            <p class="text-[10px] text-zinc-600 uppercase tracking-widest">{{ $template }}</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
 
             @if(!$isNew)
                 <div class="glass-card">

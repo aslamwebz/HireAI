@@ -1,0 +1,27 @@
+
+  [39;41;1m FAIL [39;49;22m[39m Tests\Feature\ResumeBuilderTest[39m
+  [32;1m✓[39;22m[90m [39m[90mit can swi[39m[90m…[39m [90m1.17s[39m  
+  [32;1m✓[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.42s[39m  
+  [32;1m✓[39;22m[90m [39m[90mit can man[39m[90m…[39m [90m0.45s[39m  
+  [31;1m⨯[39;22m[90m [39m[90mit can sug[39m[90m…[39m [90m0.35s[39m  
+  [31m───────────────────[39m  
+  [41;1m FAILED [49;22m [1mT[22m… [41;1m Error [49;22m  
+[39;1m  Call to undefined method Illuminate\Cache\RateLimiter::tooManyRequests()[39;22m
+
+  at [32mvendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php[39m:[32m363[39m
+    359▕         if (! $instance) {
+    360▕             throw new RuntimeException('A facade root has not been set.');
+    361▕         }
+    362▕ 
+  ➜ 363▕         return $instance->$method(...$args);
+    364▕     }
+    365▕ }
+    366▕
+
+  [33m1   [39m[39;1mvendor\laravel\framework\src\Illuminate\Support\Facades\Facade.php[39;22m:[39;1m363[39;22m
+  [33m2   [39m[39;1mapp\Livewire\ResumeBuilder.php[39;22m:[39;1m285[39;22m
+
+
+  [90mTests:[39m    [31;1m1 failed[39;22m[90m,[39m[39m [39m[32;1m3 passed[39;22m[90m (7 assertions)[39m
+  [90mDuration:[39m [39m2.85s[39m
+
