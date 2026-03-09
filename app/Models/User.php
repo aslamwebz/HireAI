@@ -121,6 +121,36 @@ class User extends Authenticatable
         return UsageRecord::canUse($this, 'cv_analysis', 5);
     }
 
+    public function getCoverLetterLimit(): int
+    {
+        return $this->isPro() ? PHP_INT_MAX : 3;
+    }
+
+    public function getCoverLetterUsage(): int
+    {
+        return UsageRecord::getMonthlyUsage($this, 'cover_letter');
+    }
+
+    public function canGenerateCoverLetter(): bool
+    {
+        return UsageRecord::canUse($this, 'cover_letter', 3);
+    }
+
+    public function getInterviewPrepLimit(): int
+    {
+        return $this->isPro() ? PHP_INT_MAX : 1;
+    }
+
+    public function getInterviewPrepUsage(): int
+    {
+        return UsageRecord::getMonthlyUsage($this, 'interview_prep');
+    }
+
+    public function canPrepInterview(): bool
+    {
+        return UsageRecord::canUse($this, 'interview_prep', 1);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

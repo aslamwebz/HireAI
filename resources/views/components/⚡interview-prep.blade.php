@@ -20,6 +20,9 @@ new class extends Component {
 
     public ?InterviewPrepModel $interviewPrep = null;
     public string $status = 'idle';
+    public bool $canPrep = true;
+    public int $prepsUsed = 0;
+    public int $prepsLimit = 1;
 
     public ?int $currentQuestionIndex = null;
     public string $currentAnswer = '';
@@ -35,6 +38,10 @@ new class extends Component {
     public function mount(): void
     {
         $user = auth()->user();
+
+        $this->canPrep = $user->canPrepInterview();
+        $this->prepsUsed = $user->getInterviewPrepUsage();
+        $this->prepsLimit = $user->getInterviewPrepLimit();
 
         // Auto-fill from profile if available
         $profileText = $user->getProfileCvText();
@@ -88,6 +95,11 @@ new class extends Component {
 
     public function generate(): void
     {
+        if (!$this->canPrep) {
+            session()->flash('error', 'You have reached your monthly interview prep limit.');
+            return;
+        }
+
         $this->validate([
             'jobDescription' => 'required|string',
             'focusArea' => 'required|string',
@@ -141,6 +153,8 @@ new class extends Component {
 
             $this->interviewPrep->update(['status' => 'completed']);
             $this->interviewPrep->refresh();
+
+            \App\Models\UsageRecord::incrementUsage(auth()->user(), 'interview_prep');
 
             $this->status = 'ready';
             $this->currentQuestionIndex = 0;
@@ -260,10 +274,17 @@ new class extends Component {
             <h1 class="text-2xl font-bold text-white">Interview Prep</h1>
             <p class="text-zinc-400">Practice with AI-generated interview questions</p>
         </div>
+        @if(!$canPrep)
+            <flux:button href="{{ route('pricing') }}" variant="primary" icon="sparkles">
+                Upgrade for Unlimited
+            </flux:button>
+        @else
+            <span class="text-sm text-zinc-400">{{ $prepsUsed }}/{{ $prepsLimit }} preps this month</span>
+        @endif
     </div>
 
     @if(session('error'))
-        <flux:callout color="red">
+        <flux:callout color="red" class="mb-6">
             {{ session('error') }}
         </flux:callout>
     @endif

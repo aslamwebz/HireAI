@@ -21,6 +21,9 @@ new class extends Component {
     public string $status = 'idle';
     public bool $isEditing = false;
     public string $editedContent = '';
+    public bool $canGenerate = true;
+    public int $generationsUsed = 0;
+    public int $generationsLimit = 3;
     public ?int $selectedCvId = null;
     public string $cvMode = 'select';
     public bool $fromProfile = false;
@@ -31,6 +34,10 @@ new class extends Component {
     public function mount(): void
     {
         $user = auth()->user();
+
+        $this->canGenerate = $user->canGenerateCoverLetter();
+        $this->generationsUsed = $user->getCoverLetterUsage();
+        $this->generationsLimit = $user->getCoverLetterLimit();
 
         // Auto-fill from profile if available
         $profileText = $user->getProfileCvText();
@@ -84,6 +91,11 @@ new class extends Component {
 
     public function generate(): void
     {
+        if (!$this->canGenerate) {
+            session()->flash('error', 'You have reached your monthly cover letter limit.');
+            return;
+        }
+
         $this->validate([
             'cvContent' => 'required|string',
             'jobDescription' => 'required|string',
@@ -135,6 +147,8 @@ new class extends Component {
                 'content' => $fullContent,
                 'status' => 'completed',
             ]);
+
+            \App\Models\UsageRecord::incrementUsage(auth()->user(), 'cover_letter');
 
             $this->editedContent = $fullContent;
             $this->status = 'completed';
@@ -192,7 +206,20 @@ new class extends Component {
             <h1 class="text-2xl font-bold text-white">Cover Letter Generator</h1>
             <p class="text-zinc-400">Generate personalized cover letters with AI</p>
         </div>
+        @if(!$canGenerate)
+            <flux:button href="{{ route('pricing') }}" variant="primary" icon="sparkles">
+                Upgrade for Unlimited
+            </flux:button>
+        @else
+            <span class="text-sm text-zinc-400">{{ $generationsUsed }}/{{ $generationsLimit }} generated this month</span>
+        @endif
     </div>
+
+    @if(session('error'))
+        <flux:callout color="red" class="mb-6">
+            {{ session('error') }}
+        </flux:callout>
+    @endif
 
     @if($status === 'idle' || $status === 'creating')
         <div class="grid lg:grid-cols-2 gap-6">

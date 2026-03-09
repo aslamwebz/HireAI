@@ -1,16 +1,12 @@
 @props(['resumeId' => null])
 
 <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between mt-4">
         <div>
             <h1 class="text-2xl font-bold text-white">{{ $isNew ? 'Create Resume' : 'Edit Resume' }}</h1>
             <p class="text-zinc-400">Build and optimize your professional resume</p>
         </div>
         <div class="flex items-center gap-3">
-            <flux:button wire:click="$toggle('showPreview')" variant="subtle"
-                icon="{{ $showPreview ? 'eye-slash' : 'eye' }}">
-                {{ $showPreview ? 'Hide Preview' : 'Show Preview' }}
-            </flux:button>
             @if(!$isNew)
                 <flux:button href="{{ route('resumes.download', $this->resume) }}" variant="subtle" icon="arrow-down-tray">
                     Download PDF
@@ -30,8 +26,8 @@
         <flux:callout color="red">{{ session('error') }}</flux:callout>
     @endif
 
-    <div class="grid {{ $showPreview ? 'lg:grid-cols-2' : 'lg:grid-cols-3' }} gap-6">
-        <div class="{{ $showPreview ? 'lg:col-span-1' : 'lg:col-span-2' }} space-y-6">
+    <div class="grid lg:grid-cols-2 gap-6">
+        <div class="lg:col-span-1 space-y-6">
             <div class="flex gap-2 border-b border-white/10 pb-4 overflow-x-auto">
                 <flux:button wire:click="$set('activeTab', 'personal')"
                     variant="{{ $activeTab === 'personal' ? 'primary' : 'subtle' }}" size="sm">Personal</flux:button>
@@ -280,8 +276,7 @@
             @endif
         </div>
 
-        <div class="{{ $showPreview ? 'lg:col-span-1' : 'lg:col-span-1' }} space-y-6">
-            @if($showPreview)
+        <div class="lg:col-span-1 space-y-6">
                 <div class="sticky top-6">
                     <div class="glass-card p-0 overflow-hidden ring-1 ring-white/10 shadow-2xl">
                         <div class="bg-zinc-900 border-b border-white/5 px-4 py-3 flex items-center justify-between">
@@ -292,59 +287,32 @@
                                 <div class="w-2 h-2 rounded-full bg-green-500/50"></div>
                             </div>
                         </div>
-                        <div class="aspect-[1/1.41] bg-white">
-                            @if(!$isNew)
-                                <iframe src="{{ route('resumes.preview', $this->resume) }}"
-                                    class="w-full h-full border-none"></iframe>
-                            @else
-                                <div
-                                    class="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-500 p-8 text-center">
-                                    <div>
-                                        <flux:icon name="arrow-path" class="w-10 h-10 mx-auto mb-4 opacity-20" />
-                                        <p>Save your resume to enable live preview</p>
-                                    </div>
-                                </div>
-                            @endif
+                        <div class="aspect-[1/1.41] bg-white overflow-y-auto" style="transform-origin: top left; transform: scale(0.65); width: 153.84%; height: 153.84%;">
+                            @php
+                                $templateView = match($template) {
+                                    \App\Models\Resume::TEMPLATE_CLASSIC => 'resumes.templates.classic',
+                                    \App\Models\Resume::TEMPLATE_MODERN => 'resumes.templates.modern',
+                                    \App\Models\Resume::TEMPLATE_CREATIVE => 'resumes.templates.creative',
+                                    \App\Models\Resume::TEMPLATE_MINIMAL => 'resumes.templates.minimal',
+                                    \App\Models\Resume::TEMPLATE_PROFESSIONAL => 'resumes.templates.professional',
+                                    default => 'resumes.templates.classic',
+                                };
+                                
+                                // Create a dummy resume object for the view if it needs one
+                                $previewResume = $this->resume ?? new \App\Models\Resume([
+                                    'title' => $title ?? 'Untitled Resume'
+                                ]);
+                            @endphp
+                            
+                            @include($templateView, [
+                                'resume' => $previewResume,
+                                'content' => $content
+                            ])
                         </div>
                     </div>
                 </div>
+                </div>
             @else
-                @if(!$isNew)
-                    <div class="glass-card">
-                        <h2 class="text-lg font-semibold text-white mb-4">Quick Actions</h2>
-                        <div class="space-y-2">
-                            <flux:button href="{{ route('resumes.download', $this->resume) }}" variant="primary" class="w-full"
-                                icon="arrow-down-tray">
-                                Download PDF
-                            </flux:button>
-                            <flux:button href="{{ route('resumes.preview', $this->resume) }}" variant="subtle" class="w-full"
-                                icon="eye" target="_blank">
-                                Open Preview
-                            </flux:button>
-                        </div>
-                    </div>
-
-                    @if($this->versions->isNotEmpty())
-                        <div class="glass-card">
-                            <h2 class="text-lg font-semibold text-white mb-4">Version History</h2>
-                            <div class="space-y-2 max-h-64 overflow-y-auto">
-                                @foreach($this->versions as $version)
-                                    <div class="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg border border-white/5">
-                                        <div class="overflow-hidden">
-                                            <p class="text-sm text-white font-medium">v{{ $version->version_number }}</p>
-                                            <p class="text-xs text-zinc-500 truncate">{{ $version->change_summary }}</p>
-                                        </div>
-                                        <flux:button wire:click="restoreVersion({{ $version->version_number }})" size="xs"
-                                            variant="subtle">
-                                            Restore
-                                        </flux:button>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                @endif
-
                 <div class="glass-card">
                     <h2 class="text-lg font-semibold text-white mb-4">Template Overview</h2>
                     <div
@@ -355,6 +323,42 @@
                         </div>
                     </div>
                 </div>
+            @endif
+
+            @if(!$isNew)
+                <div class="glass-card">
+                    <h2 class="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+                    <div class="space-y-2">
+                        <flux:button href="{{ route('resumes.download', $this->resume) }}" variant="primary" class="w-full"
+                            icon="arrow-down-tray">
+                            Download PDF
+                        </flux:button>
+                        <flux:button href="{{ route('resumes.preview', $this->resume) }}" variant="subtle" class="w-full"
+                            icon="eye" target="_blank">
+                            Open Preview
+                        </flux:button>
+                    </div>
+                </div>
+
+                @if($this->versions->isNotEmpty())
+                    <div class="glass-card">
+                        <h2 class="text-lg font-semibold text-white mb-4">Version History</h2>
+                        <div class="space-y-2 max-h-64 overflow-y-auto">
+                            @foreach($this->versions as $version)
+                                <div class="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg border border-white/5">
+                                    <div class="overflow-hidden">
+                                        <p class="text-sm text-white font-medium">v{{ $version->version_number }}</p>
+                                        <p class="text-xs text-zinc-500 truncate">{{ $version->change_summary }}</p>
+                                    </div>
+                                    <flux:button wire:click="restoreVersion({{ $version->version_number }})" size="xs"
+                                        variant="subtle">
+                                        Restore
+                                    </flux:button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             @endif
         </div>
     </div>
