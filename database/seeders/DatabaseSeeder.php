@@ -15,5 +15,13 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
             'plan' => 'pro',
         ]);
+
+        $this->call([
+            UserProfileSeeder::class,
+            JobApplicationSeeder::class,
+            CvAnalysisSeeder::class,
+            CoverLetterSeeder::class,
+            InterviewPrepSeeder::class,
+        ]);
     }
 }

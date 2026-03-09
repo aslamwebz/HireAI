@@ -445,6 +445,30 @@ PROMPT;
         return array_filter($questions);
     }
 
+    public function improveResumeHighlight(string $highlight, ?string $jobDescription = null): array
+    {
+        $schema = new ArraySchema(
+            name: 'improvements',
+            description: '3-5 improved versions of the resume bullet point using Action Verbs and Quantifiable Results',
+            items: new StringSchema('bullet', 'An improved version of the bullet point')
+        );
+
+        $prompt = "Improve this resume bullet point: \"{$highlight}\". \n\nFocus on using strong action verbs and quantifying results where possible.";
+
+        if ($jobDescription) {
+            $prompt .= "\n\nTailor the improvements for this job description: \n{$jobDescription}";
+        }
+
+        $response = Prism::structured()
+            ->using($this->provider, 'gpt-4o-mini')
+            ->withSystemPrompt('You are a professional resume writer. Improve bullet points to be more impactful and result-oriented.')
+            ->withPrompt($prompt)
+            ->withSchema($schema)
+            ->generate();
+
+        return $response->structured;
+    }
+
     public function extractProfileFromText(string $rawText): array
     {
         $schema = new ObjectSchema(

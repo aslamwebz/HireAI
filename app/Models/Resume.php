@@ -76,9 +76,9 @@ class Resume extends Model
         ]);
     }
 
-    public function bumpVersion(?string $changeSummary = null): void
+    public function bumpVersion(?string $changeSummary = null, ?string $optimizationType = null, ?string $optimizationNotes = null): void
     {
-        $this->createVersion($changeSummary);
+        $this->createVersion($changeSummary, $optimizationType, $optimizationNotes);
         $this->increment('current_version');
     }
 
@@ -109,7 +109,7 @@ class Resume extends Model
     {
         $personal = $this->getPersonalInfo();
 
-        return trim(($personal['first_name'] ?? '').' '.($personal['last_name'] ?? ''));
+        return trim(($personal['first_name'] ?? '') . ' ' . ($personal['last_name'] ?? ''));
     }
 
     public function scopePrimary($query)
