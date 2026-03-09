@@ -475,7 +475,13 @@ new class extends Component {
         <div class="glass-card text-center py-12">
             <flux:icon name="exclamation-circle" class="w-16 h-16 text-red-400 mx-auto mb-4" />
             <h2 class="text-xl font-semibold text-white mb-2">Generation Failed</h2>
-            <p class="text-zinc-400 mb-6">{{ $coverLetter?->content ?? 'Something went wrong. Please try again.' }}</p>
+            <p class="text-zinc-400 mb-2">{{ $coverLetter?->content ?? 'Something went wrong. Please try again.' }}</p>
+            @if($coverLetter?->error_message)
+                <p class="text-xs text-red-400/80 font-mono mb-6 bg-red-500/10 p-2 rounded-lg inline-block">
+                    {{ $coverLetter->error_message }}</p>
+            @else
+                <div class="mb-6"></div>
+            @endif
             <div class="flex justify-center gap-3">
                 <flux:button wire:click="resetGenerator" variant="subtle">
                     Start Over

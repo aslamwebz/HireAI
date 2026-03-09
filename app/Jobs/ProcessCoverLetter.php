@@ -29,7 +29,8 @@ class ProcessCoverLetter implements ShouldQueue
             if (!$aiService->isConfigured()) {
                 $coverLetter->update([
                     'status' => 'failed',
-                    'content' => 'AI is not configured. Please configure your AI settings first.',
+                    'error_message' => 'AI is not configured. Please configure your AI settings first.',
+                    'content' => 'Configuration Error.',
                 ]);
                 return;
             }
@@ -54,7 +55,8 @@ class ProcessCoverLetter implements ShouldQueue
 
             $coverLetter->update([
                 'status' => 'failed',
-                'content' => 'Generation failed: ' . $e->getMessage(),
+                'error_message' => $e->getMessage(),
+                'content' => 'Generation failed. Please check the error message or try again.',
             ]);
 
             throw $e;

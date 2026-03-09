@@ -615,10 +615,18 @@ new class extends Component {
         <div class="glass-card text-center py-12">
             <flux:icon name="exclamation-circle" class="w-16 h-16 text-red-400 mx-auto mb-4" />
             <h2 class="text-xl font-semibold text-white mb-2">Generation Failed</h2>
-            <p class="text-zinc-400 mb-6">Something went wrong. Please try again.</p>
-            <flux:button wire:click="resetPrep" variant="primary">
-                Try Again
-            </flux:button>
+            <p class="text-zinc-400 mb-2">Something went wrong while generating your interview questions.</p>
+            @if($interviewPrep?->error_message)
+                <p class="text-xs text-red-400/80 font-mono mb-6 bg-red-500/10 p-2 rounded-lg inline-block">
+                    {{ $interviewPrep->error_message }}</p>
+            @else
+                <div class="mb-6"></div>
+            @endif
+            <div class="flex justify-center gap-3">
+                <flux:button wire:click="resetPrep" variant="primary">
+                    Try Again
+                </flux:button>
+            </div>
         </div>
     @endif
 </div>

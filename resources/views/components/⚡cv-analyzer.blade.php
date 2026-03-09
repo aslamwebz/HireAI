@@ -482,7 +482,12 @@ new class extends Component
                 <flux:icon name="exclamation-circle" class="w-10 h-10 text-red-400" />
             </div>
             <h2 class="text-2xl font-semibold text-white mb-3">Analysis Failed</h2>
-            <p class="text-zinc-400 mb-6">{{ $analysis?->full_analysis ?? 'Something went wrong. Please try again.' }}</p>
+            <p class="text-zinc-400 mb-2">{{ $analysis?->full_analysis ?? 'Something went wrong. Please try again.' }}</p>
+            @if($analysis?->error_message)
+                <p class="text-xs text-red-400/80 font-mono mb-6 bg-red-500/10 p-2 rounded-lg inline-block">{{ $analysis->error_message }}</p>
+            @else
+                <div class="mb-6"></div>
+            @endif
             <flux:button wire:click="$set('status', 'idle')" variant="primary">
                 Try Again
             </flux:button>

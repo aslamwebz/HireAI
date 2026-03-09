@@ -30,6 +30,7 @@ class ProcessInterviewPrep implements ShouldQueue
             if (!$aiService->isConfigured()) {
                 $interviewPrep->update([
                     'status' => 'failed',
+                    'error_message' => 'AI is not configured. Please configure your AI settings first.',
                 ]);
                 return;
             }
@@ -57,7 +58,10 @@ class ProcessInterviewPrep implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
 
-            $interviewPrep->update(['status' => 'failed']);
+            $interviewPrep->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage()
+            ]);
 
             throw $e;
         }

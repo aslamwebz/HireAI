@@ -29,7 +29,8 @@ class ProcessCvAnalysis implements ShouldQueue
             if (!$aiService->isConfigured()) {
                 $analysis->update([
                     'status' => 'failed',
-                    'full_analysis' => 'AI is not configured. Please configure your AI settings first.',
+                    'error_message' => 'AI is not configured. Please configure your AI settings first.',
+                    'full_analysis' => 'Configuration Error.',
                 ]);
                 return;
             }
@@ -60,7 +61,8 @@ class ProcessCvAnalysis implements ShouldQueue
 
             $analysis->update([
                 'status' => 'failed',
-                'full_analysis' => 'Analysis failed: ' . $e->getMessage(),
+                'error_message' => $e->getMessage(),
+                'full_analysis' => 'Analysis failed. Please check the error message below or try again.',
             ]);
 
             throw $e;
