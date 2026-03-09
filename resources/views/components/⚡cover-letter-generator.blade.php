@@ -9,6 +9,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Validate;
 use Prism\Prism\Streaming\Events\TextDeltaEvent;
+use Illuminate\Support\Facades\RateLimiter;
 
 new class extends Component {
     use WithFileUploads;
@@ -91,6 +92,13 @@ new class extends Component {
 
     public function generate(): void
     {
+        $key = 'ai_generate:' . auth()->id();
+        if (RateLimiter::tooManyRequests($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+            session()->flash('error', "Too many requests. Please try again in {$seconds} seconds.");
+            return;
+        }
+
         if (!$this->canGenerate) {
             session()->flash('error', 'You have reached your monthly cover letter limit.');
             return;
@@ -101,6 +109,8 @@ new class extends Component {
             'jobDescription' => 'required|string',
             'tone' => 'required|string',
         ]);
+
+        RateLimiter::hit($key, 60);
 
         $this->status = 'creating';
 

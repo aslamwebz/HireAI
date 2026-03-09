@@ -7,6 +7,7 @@ use App\Services\CvTextExtractor;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Validate;
+use Illuminate\Support\Facades\RateLimiter;
 
 new class extends Component
 {
@@ -87,6 +88,13 @@ new class extends Component
 
     public function analyze(): void
     {
+        $key = 'ai_generate:' . auth()->id();
+        if (RateLimiter::tooManyRequests($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+            session()->flash('error', "Too many requests. Please try again in {$seconds} seconds.");
+            return;
+        }
+
         if (!$this->canAnalyze) {
             session()->flash('error', 'You have reached your monthly analysis limit.');
             return;
@@ -96,6 +104,8 @@ new class extends Component
             'cvContent' => 'required|string',
             'jobDescription' => 'required|string',
         ]);
+        
+        RateLimiter::hit($key, 60);
 
         $this->status = 'creating';
 

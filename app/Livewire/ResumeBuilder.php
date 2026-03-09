@@ -7,6 +7,7 @@ use App\Models\UserProfile;
 use App\Services\AiService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\RateLimiter;
 
 class ResumeBuilder extends Component
 {
@@ -100,6 +101,91 @@ class ResumeBuilder extends Component
         }
     }
 
+    public function optimizeForAts(): void
+    {
+        $this->validate([
+            'jobDescription' => 'required|string',
+        ]);
+
+        $key = 'ai_generate:' . auth()->id();
+        if (RateLimiter::tooManyRequests($key, 10)) {
+            $seconds = RateLimiter::availableIn($key);
+            $this->optimizationNotes = "Too many AI requests. Please try again in {$seconds} seconds.";
+            $this->optimizationStatus = 'failed';
+            return;
+        }
+
+        $this->optimizationStatus = 'optimizing';
+        $this->optimizationNotes = '';
+        $this->atsScoreBefore = 0;
+        $this->atsScoreAfter = 0;
+        $this->atsKeywordsAdded = [];
+
+        try {
+            $aiService = app(AiService::class, ['user' => auth()->user()]);
+
+            RateLimiter::hit($key, 60);
+
+            $result = $aiService->optimizeResumeForAts($this->content, $this->jobDescription);
+            $this->atsScoreBefore = $result['ats_score_before'];
+            $this->atsScoreAfter = $result['ats_score_after'];
+            $this->atsKeywordsAdded = $result['ats_keywords_added'];
+            $this->content = $result['content'];
+            $this->optimizationNotes = $result['optimization_notes'];
+
+            $this->resume->bumpVersion('ATS Optimization', 'ats_optimize', $this->optimizationNotes);
+            $this->resume->update(['content' => $this->content]);
+
+            $this->optimizationStatus = 'completed';
+        } catch (\Exception $e) {
+            $this->optimizationStatus = 'failed';
+            session()->flash('error', 'Optimization failed: ' . $e->getMessage());
+        }
+    }
+
+    public function optimize(): void
+    {
+        $this->validate([
+            'jobDescription' => $this->optimizationType === 'ats' ? 'required|string' : 'nullable|string',
+        ]);
+
+        $key = 'ai_generate:' . auth()->id();
+        if (RateLimiter::tooManyRequests($key, 10)) {
+            $seconds = RateLimiter::availableIn($key);
+            $this->optimizationNotes = "Too many AI requests. Please try again in {$seconds} seconds.";
+            $this->optimizationStatus = 'failed';
+            return;
+        }
+
+        $this->optimizationStatus = 'optimizing';
+        $this->optimizationNotes = '';
+
+        try {
+            $aiService = app(AiService::class, ['user' => auth()->user()]);
+
+            RateLimiter::hit($key, 60);
+
+            if ($this->optimizationType === 'ats') {
+                // Delegate to optimizeForAts if it's an ATS optimization
+                $this->optimizeForAts();
+                return; // optimizeForAts handles its own status and versioning
+            } else {
+                $result = $aiService->optimizeResume($this->content, $this->jobDescription ?: null);
+            }
+
+            $this->content = $result['content'];
+            $this->optimizationNotes = $result['optimization_notes'];
+
+            $this->resume->bumpVersion('AI Resume Optimization', 'ai_optimize', $this->optimizationNotes);
+            $this->resume->update(['content' => $this->content]);
+
+            $this->optimizationStatus = 'completed';
+        } catch (\Exception $e) {
+            $this->optimizationStatus = 'failed';
+            session()->flash('error', 'Optimization failed: ' . $e->getMessage());
+        }
+    }
+
     public function showOptimizeDialog(string $type): void
     {
         $this->optimizationType = $type;
@@ -110,47 +196,6 @@ class ResumeBuilder extends Component
         $this->atsScoreAfter = 0;
         $this->atsKeywordsAdded = [];
         $this->optimizationStatus = 'idle';
-    }
-
-    public function optimize(): void
-    {
-        $this->validate([
-            'jobDescription' => $this->optimizationType === 'ats' ? 'required|string' : 'nullable|string',
-        ]);
-
-        if (!$this->resume) {
-            $this->save();
-        }
-
-        $this->optimizationStatus = 'processing';
-
-        try {
-            $aiService = new AiService(auth()->user());
-
-            if ($this->optimizationType === 'ats') {
-                $result = $aiService->optimizeResumeForAts($this->content, $this->jobDescription);
-                $this->atsScoreBefore = $result['ats_score_before'];
-                $this->atsScoreAfter = $result['ats_score_after'];
-                $this->atsKeywordsAdded = $result['ats_keywords_added'];
-            } else {
-                $result = $aiService->optimizeResume($this->content, $this->jobDescription ?: null);
-            }
-
-            $this->content = $result['content'];
-            $this->optimizationNotes = $result['optimization_notes'];
-
-            $this->resume->bumpVersion(
-                $this->optimizationType === 'ats' ? 'ATS Optimization' : 'AI Resume Optimization',
-                $this->optimizationType === 'ats' ? 'ats_optimize' : 'ai_optimize',
-                $this->optimizationNotes
-            );
-            $this->resume->update(['content' => $this->content]);
-
-            $this->optimizationStatus = 'completed';
-        } catch (\Exception $e) {
-            $this->optimizationStatus = 'failed';
-            session()->flash('error', 'Optimization failed: ' . $e->getMessage());
-        }
     }
 
     public function getVersionsProperty()
@@ -234,13 +279,23 @@ class ResumeBuilder extends Component
         $this->content['skills'] = array_values($this->content['skills']);
     }
 
-    public function suggestImprovements(int $expIndex, int $hIndex): void
+    public function suggestHighlights(int $experienceIndex, ?int $highlightIndex = null): void
     {
-        $this->selectedExperienceIndex = $expIndex;
-        $this->selectedHighlightIndex = $hIndex;
-        $this->currentHighlight = $this->content['work_experience'][$expIndex]['highlights'][$hIndex];
+        $key = 'ai_generate:' . auth()->id();
+        if (RateLimiter::tooManyRequests($key, 20)) {
+            $seconds = RateLimiter::availableIn($key);
+            $this->highlightSuggestions = ["Rate limit exceeded. Try again in {$seconds}s."];
+            $this->showSuggestionModal = true;
+            $this->isSuggesting = false; // Ensure suggesting status is reset
+            return;
+        }
+
+        $this->selectedExperienceIndex = $experienceIndex;
+        $this->selectedHighlightIndex = $highlightIndex;
+        $this->currentHighlight = $this->content['work_experience'][$experienceIndex]['highlights'][$highlightIndex];
 
         if (empty($this->currentHighlight)) {
+            $this->showSuggestionModal = false; // Close modal if highlight is empty
             return;
         }
 
