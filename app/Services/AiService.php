@@ -65,14 +65,50 @@ class AiService
 
     public function isConfigured(): bool
     {
+        if (! empty($this->settings?->api_key)) {
+            return true;
+        }
+
         $provider = $this->settings?->provider ?? 'openrouter';
 
-        return ! empty(config("ai.providers.{$provider}.key"));
+        return ! empty(config("ai.providers.{$provider}.key"))
+            || ! empty(config("prism.providers.{$provider}.api_key"));
     }
 
     public function isUsingGlobalConfig(): bool
     {
-        return $this->usingGlobalConfig;
+        return empty($this->settings?->api_key);
+    }
+
+    public function getProviderConfig(): array
+    {
+        $config = [];
+        $providerName = $this->settings?->provider ?? 'openrouter';
+
+        if (! empty($this->settings?->api_key)) {
+            $config['api_key'] = $this->settings->api_key;
+        } elseif (! empty(config("ai.providers.{$providerName}.key"))) {
+            $config['api_key'] = config("ai.providers.{$providerName}.key");
+        }
+
+        return $config;
+    }
+
+    public function getStructuredModel(): string
+    {
+        if (! empty($this->settings?->model)) {
+            return $this->settings->model;
+        }
+
+        return match ($this->provider) {
+            Provider::OpenAI => 'gpt-4o-mini',
+            Provider::Anthropic => 'claude-3-5-sonnet-20241022',
+            Provider::Gemini => 'gemini-1.5-flash',
+            Provider::Groq => 'llama-3.3-70b-versatile',
+            Provider::Mistral => 'mistral-large-latest',
+            Provider::Ollama => 'llama3.2',
+            default => $this->model,
+        };
     }
 
     public function testConnection(): bool
@@ -170,6 +206,7 @@ Return the optimized resume in the EXACT same JSON structure. Make these improve
 4. Add relevant keywords naturally
 5. Ensure consistent formatting and tone
 6. Highlight the most relevant experiences first
+7. Maintain strict truthfulness: do NOT invent employers, dates, certifications, or false metrics not present in the candidate's original resume
 
 Keep the same JSON structure. Return ONLY valid JSON:
 {
@@ -226,6 +263,7 @@ Return the ATS-optimized resume in the EXACT same JSON structure. Make these imp
 6. Ensure dates are in consistent format
 7. Remove any special characters or complex formatting
 8. Quantify achievements with numbers where possible
+9. Maintain strict truthfulness: do NOT fabricate metrics, technologies, or roles not in the candidate's background
 
 Keep the same JSON structure. Return ONLY valid JSON:
 {
@@ -278,7 +316,7 @@ PROMPT;
     protected function sendRequest(string $prompt): string
     {
         $response = Prism::text()
-            ->using($this->provider, $this->model)
+            ->using($this->provider, $this->model, $this->getProviderConfig())
             ->withSystemPrompt('You are an expert career coach and hiring consultant. Provide detailed, actionable advice.')
             ->withPrompt($prompt)
             ->asText();
@@ -289,7 +327,7 @@ PROMPT;
     protected function sendStreamRequest(string $prompt): \Generator
     {
         return Prism::text()
-            ->using($this->provider, $this->model)
+            ->using($this->provider, $this->model, $this->getProviderConfig())
             ->withSystemPrompt('You are an expert career coach and hiring consultant. Provide detailed, actionable advice.')
             ->withPrompt($prompt)
             ->asStream();
@@ -460,7 +498,7 @@ PROMPT;
         }
 
         $response = Prism::structured()
-            ->using($this->provider, 'gpt-4o-mini')
+            ->using($this->provider, $this->getStructuredModel(), $this->getProviderConfig())
             ->withSystemPrompt('You are a professional resume writer. Improve bullet points to be more impactful and result-oriented.')
             ->withPrompt($prompt)
             ->withSchema($schema)
@@ -588,9 +626,9 @@ PROMPT;
         );
 
         $response = Prism::structured()
-            ->using($this->provider, 'gpt-4o-mini') // Force a fast/cheap model for parsing if possible, or use default
+            ->using($this->provider, $this->getStructuredModel(), $this->getProviderConfig())
             ->withSystemPrompt('You are an expert resume data extractor. Extract the information precisely.')
-            ->withPrompt('Extract the applicant data from this resume text: ' . $rawText)
+            ->withPrompt('Extract the applicant data from this resume text: '.$rawText)
             ->withSchema($schema)
             ->generate();
 
