@@ -4,6 +4,14 @@ use App\Models\Resume;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Prism\Prism\Enums\FinishReason;
+use Prism\Prism\Facades\Prism;
+use Prism\Prism\Structured\Response as StructuredResponse;
+use Prism\Prism\Text\Response as TextResponse;
+use Prism\Prism\ValueObjects\Meta;
+use Prism\Prism\ValueObjects\Usage;
 
 uses(RefreshDatabase::class);
 
@@ -156,22 +164,69 @@ describe('Resume Versioning', function () {
 
 describe('Resume Optimization', function () {
     it('can optimize resume', function () {
-        $resume = Resume::factory()->for($this->user)->create();
+        $resume = Resume::factory()->for($this->user)->create([
+            'content' => ['personal' => ['first_name' => 'Initial']],
+        ]);
+
+        Prism::fake([
+            new TextResponse(
+                steps: collect([]),
+                text: json_encode([
+                    'personal' => ['first_name' => 'Optimized', 'last_name' => 'Candidate'],
+                    'optimization_notes' => 'Improved summary and impact',
+                ]),
+                finishReason: FinishReason::Stop,
+                toolCalls: [],
+                toolResults: [],
+                usage: new Usage(0, 0),
+                meta: new Meta('fake', 'fake'),
+                messages: collect([]),
+                additionalContent: []
+            ),
+        ]);
 
         $response = $this->postJson(route('resumes.optimize', $resume));
 
         $response->assertSuccessful();
-    })->skip('Requires AI service mocking');
+        $response->assertJsonPath('message', 'Resume optimized successfully.');
+        $resume->refresh();
+        expect($resume->content['personal']['first_name'])->toBe('Optimized');
+    });
 
     it('can optimize resume for ats', function () {
-        $resume = Resume::factory()->for($this->user)->create();
+        $resume = Resume::factory()->for($this->user)->create([
+            'content' => ['personal' => ['first_name' => 'Initial']],
+        ]);
+
+        Prism::fake([
+            new TextResponse(
+                steps: collect([]),
+                text: json_encode([
+                    'personal' => ['first_name' => 'ATS Optimized'],
+                    'ats_keywords_added' => ['Laravel', 'PHP'],
+                    'ats_score_before' => 60,
+                    'ats_score_after' => 90,
+                    'optimization_notes' => 'Added ATS keywords',
+                ]),
+                finishReason: FinishReason::Stop,
+                toolCalls: [],
+                toolResults: [],
+                usage: new Usage(0, 0),
+                meta: new Meta('fake', 'fake'),
+                messages: collect([]),
+                additionalContent: []
+            ),
+        ]);
 
         $response = $this->postJson(route('resumes.optimize-ats', $resume), [
             'job_description' => 'Test job description',
         ]);
 
         $response->assertSuccessful();
-    })->skip('Requires AI service mocking');
+        $response->assertJsonPath('message', 'Resume optimized for ATS successfully.');
+        $resume->refresh();
+        expect($resume->content['personal']['first_name'])->toBe('ATS Optimized');
+    });
 });
 
 describe('Profile', function () {
@@ -209,12 +264,55 @@ describe('Profile', function () {
     it('can import profile from uploaded resume', function () {
         Storage::fake('local');
 
-        $file = UploadedFile::fake()->create('resume.pdf', 1000);
+        $this->mock(\App\Services\CvTextExtractor::class, function ($mock) {
+            $mock->shouldReceive('extract')
+                ->once()
+                ->andReturn("John Doe\njohn@example.com\nDeveloper");
+        });
+
+        Prism::fake([
+            new StructuredResponse(
+                steps: collect([]),
+                text: '',
+                structured: [
+                    'personal' => [
+                        'first_name' => 'John',
+                        'last_name' => 'Doe',
+                        'email' => 'john@example.com',
+                        'phone' => '123-456-7890',
+                    ],
+                    'professional_summary' => 'Experienced Laravel Developer',
+                    'social_links' => [
+                        'linkedin' => 'https://linkedin.com/in/johndoe',
+                        'github' => 'https://github.com/johndoe',
+                    ],
+                    'work_experience' => [],
+                    'education' => [],
+                    'skills' => [],
+                    'certifications' => [],
+                    'languages' => [],
+                    'awards' => [],
+                ],
+                finishReason: FinishReason::Stop,
+                usage: new Usage(0, 0),
+                meta: new Meta('fake', 'fake'),
+                additionalContent: []
+            ),
+        ]);
+
+        $file = UploadedFile::fake()->create('resume.pdf', 100);
 
         $response = $this->postJson(route('profile.import'), [
             'resume' => $file,
         ]);
 
         $response->assertSuccessful();
-    })->skip('Requires file upload handling');
+        $response->assertJsonPath('message', 'Profile imported successfully.');
+        $this->assertDatabaseHas('user_profiles', [
+            'user_id' => $this->user->id,
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'john@example.com',
+        ]);
+    });
 });

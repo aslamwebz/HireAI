@@ -65,3 +65,47 @@ test('cv analyzer page is accessible to authenticated users', function () {
 
     $response->assertStatus(200);
 });
+
+test('process cv analysis job executes and completes successfully', function () {
+    \Prism\Prism\Facades\Prism::fake([
+        new \Prism\Prism\Text\Response(
+            steps: collect([]),
+            text: json_encode([
+                'match_score' => 88,
+                'ats_score' => 92,
+                'missing_keywords' => ['Docker', 'Kubernetes'],
+                'strengths' => ['Strong Laravel experience'],
+                'weaknesses' => ['Limited cloud deployment mentions'],
+                'improvements' => ['Quantify backend achievements'],
+                'rewritten_bullets' => [
+                    ['original' => 'Built APIs', 'improved' => 'Designed RESTful APIs handling 10k req/sec'],
+                ],
+                'full_analysis' => 'Candidate is an excellent match for this senior backend engineering role.',
+            ]),
+            finishReason: \Prism\Prism\Enums\FinishReason::Stop,
+            toolCalls: [],
+            toolResults: [],
+            usage: new \Prism\Prism\ValueObjects\Usage(0, 0),
+            meta: new \Prism\Prism\ValueObjects\Meta('fake', 'fake'),
+            messages: collect([]),
+            additionalContent: []
+        ),
+    ]);
+
+    $analysis = CvAnalysis::factory()->create([
+        'user_id' => $this->user->id,
+        'cv_content' => 'Experienced Laravel Engineer',
+        'job_description' => 'Senior Laravel Developer position',
+        'status' => 'pending',
+    ]);
+
+    (new \App\Jobs\ProcessCvAnalysis($analysis))->handle();
+
+    $analysis->refresh();
+    expect($analysis->status)->toBe('completed')
+        ->and($analysis->match_score)->toBe(88)
+        ->and($analysis->ats_score)->toBe(92)
+        ->and($analysis->missing_keywords)->toContain('Docker');
+
+    expect(\App\Models\UsageRecord::getMonthlyUsage($this->user, 'cv_analysis'))->toBe(1);
+});
