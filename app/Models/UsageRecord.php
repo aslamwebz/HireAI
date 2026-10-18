@@ -2,10 +2,8 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
 
 class UsageRecord extends Model
 {
@@ -24,19 +22,23 @@ class UsageRecord extends Model
     public static function incrementUsage(User $user, string $feature): void
     {
         $period = now()->format('Y-m');
-        static::updateOrCreate(
+
+        $record = static::firstOrCreate(
             [
                 'user_id' => $user->id,
                 'feature' => $feature,
                 'period' => $period,
             ],
-            ['count' => DB::raw('count + 1')]
+            ['count' => 0]
         );
+
+        $record->increment('count');
     }
 
     public static function getMonthlyUsage(User $user, string $feature): int
     {
         $period = now()->format('Y-m');
+
         return static::where('user_id', $user->id)
             ->where('feature', $feature)
             ->where('period', $period)
@@ -46,6 +48,7 @@ class UsageRecord extends Model
     public static function canUse(User $user, string $feature, int $freeLimit): bool
     {
         $usage = static::getMonthlyUsage($user, $feature);
+
         return $usage < $freeLimit || $user->isPro();
     }
 }

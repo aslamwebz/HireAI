@@ -78,8 +78,15 @@ class Resume extends Model
 
     public function bumpVersion(?string $changeSummary = null, ?string $optimizationType = null, ?string $optimizationNotes = null): void
     {
-        $this->createVersion($changeSummary, $optimizationType, $optimizationNotes);
-        $this->increment('current_version');
+        $nextVersion = max((int) $this->current_version, (int) $this->versions()->max('version_number')) + 1;
+        $this->versions()->create([
+            'version_number' => $nextVersion,
+            'content' => $this->content,
+            'change_summary' => $changeSummary,
+            'optimization_type' => $optimizationType,
+            'optimization_notes' => $optimizationNotes,
+        ]);
+        $this->update(['current_version' => $nextVersion]);
     }
 
     public function restoreVersion(int $versionNumber): bool
@@ -90,11 +97,17 @@ class Resume extends Model
             return false;
         }
 
-        $this->createVersion("Restored from version {$versionNumber}");
+        $nextVersion = max((int) $this->current_version, (int) $this->versions()->max('version_number')) + 1;
 
         $this->update([
             'content' => $version->content,
-            'current_version' => $this->current_version + 1,
+            'current_version' => $nextVersion,
+        ]);
+
+        $this->versions()->create([
+            'version_number' => $nextVersion,
+            'content' => $version->content,
+            'change_summary' => "Restored from version {$versionNumber}",
         ]);
 
         return true;
@@ -109,7 +122,7 @@ class Resume extends Model
     {
         $personal = $this->getPersonalInfo();
 
-        return trim(($personal['first_name'] ?? '') . ' ' . ($personal['last_name'] ?? ''));
+        return trim(($personal['first_name'] ?? '').' '.($personal['last_name'] ?? ''));
     }
 
     public function scopePrimary($query)

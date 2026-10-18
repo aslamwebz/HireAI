@@ -184,10 +184,15 @@ class UserProfile extends Model
             foreach ($this->work_experience as $exp) {
                 $title = $exp['title'] ?? $exp['position'] ?? '';
                 $company = $exp['company'] ?? '';
-                $dates = trim(($exp['start_date'] ?? '') . ' - ' . ($exp['end_date'] ?? 'Present'), ' -');
-                $lines[] = "{$title} at {$company}" . ($dates ? " ({$dates})" : '');
+                $dates = trim(($exp['start_date'] ?? '').' - '.($exp['end_date'] ?? 'Present'), ' -');
+                $lines[] = "{$title} at {$company}".($dates ? " ({$dates})" : '');
                 if (! empty($exp['description'])) {
                     $lines[] = $exp['description'];
+                }
+                if (! empty($exp['highlights']) && is_array($exp['highlights'])) {
+                    foreach ($exp['highlights'] as $highlight) {
+                        $lines[] = '• '.$highlight;
+                    }
                 }
             }
         }
@@ -199,8 +204,8 @@ class UserProfile extends Model
             foreach ($this->education as $edu) {
                 $degree = $edu['degree'] ?? '';
                 $institution = $edu['institution'] ?? $edu['school'] ?? '';
-                $dates = trim(($edu['start_date'] ?? '') . ' - ' . ($edu['end_date'] ?? ''), ' -');
-                $lines[] = "{$degree} — {$institution}" . ($dates ? " ({$dates})" : '');
+                $dates = trim(($edu['start_date'] ?? '').' - '.($edu['end_date'] ?? ''), ' -');
+                $lines[] = "{$degree} — {$institution}".($dates ? " ({$dates})" : '');
             }
         }
 

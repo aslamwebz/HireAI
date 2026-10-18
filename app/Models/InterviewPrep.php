@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class InterviewPrep extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'user_id',
         'job_application_id',
@@ -18,6 +19,7 @@ class InterviewPrep extends Model
         'focus_area',
         'overall_score',
         'status',
+        'error_message',
     ];
 
     public function user(): BelongsTo

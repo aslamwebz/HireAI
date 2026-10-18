@@ -26,6 +26,7 @@ class CvAnalysis extends Model
         'weaknesses',
         'full_analysis',
         'status',
+        'error_message',
     ];
 
     protected function casts(): array

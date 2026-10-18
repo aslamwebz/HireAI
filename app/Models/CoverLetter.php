@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CoverLetter extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'user_id',
         'job_application_id',
@@ -17,6 +18,7 @@ class CoverLetter extends Model
         'tone',
         'content',
         'status',
+        'error_message',
     ];
 
     public function user(): BelongsTo
