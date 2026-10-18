@@ -15,6 +15,7 @@ class ProcessInterviewPrep implements ShouldQueue
     use Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 180;
 
     public function __construct(public InterviewPrep $interviewPrep) {}
@@ -27,11 +28,12 @@ class ProcessInterviewPrep implements ShouldQueue
         try {
             $aiService = new AiService($interviewPrep->user);
 
-            if (!$aiService->isConfigured()) {
+            if (! $aiService->isConfigured()) {
                 $interviewPrep->update([
                     'status' => 'failed',
                     'error_message' => 'AI is not configured. Please configure your AI settings first.',
                 ]);
+
                 return;
             }
 
@@ -40,6 +42,8 @@ class ProcessInterviewPrep implements ShouldQueue
                 $interviewPrep->cv_content,
                 $interviewPrep->focus_area
             );
+
+            $interviewPrep->questions()->delete();
 
             foreach ($questions as $index => $question) {
                 InterviewQuestion::create([
@@ -60,7 +64,7 @@ class ProcessInterviewPrep implements ShouldQueue
 
             $interviewPrep->update([
                 'status' => 'failed',
-                'error_message' => $e->getMessage()
+                'error_message' => $e->getMessage(),
             ]);
 
             throw $e;
