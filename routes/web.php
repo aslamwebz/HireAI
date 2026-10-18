@@ -51,6 +51,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::post('stripe/webhook', [SubscriptionController::class, 'webhook'])->name('stripe.webhook');
+// Cashier's webhook route is automatically handled if you use the default stripe/webhook path,
+// but we'll keeping it explicit if you want to use a specific URL or CSRF protection.
+Route::post('stripe/webhook', [\Laravel\Cashier\Http\Controllers\WebhookController::class, 'handleWebhook'])->name('cashier.webhook');
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

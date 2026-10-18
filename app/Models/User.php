@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laravel\Cashier\Billable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use Billable, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'name',
@@ -48,7 +49,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn($word) => Str::substr($word, 0, 1))
+            ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 
@@ -99,7 +100,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isPro(): bool
     {
-        return $this->plan === 'pro' && ($this->trial_ends_at === null || $this->trial_ends_at->isFuture());
+        return $this->subscribed('default') || $this->isOnTrial() || $this->plan === 'pro';
     }
 
     public function isOnTrial(): bool

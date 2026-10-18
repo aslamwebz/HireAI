@@ -2,25 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\StripeService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class SubscriptionController
 {
-    public function __construct(protected StripeService $stripe) {}
-
     public function checkout(Request $request)
     {
-        $user = Auth::user();
+        $priceId = config('services.stripe.pro_price_id');
 
-        try {
-            $url = $this->stripe->createCheckoutSession($user, $this->stripe->getPriceId());
-
-            return redirect($url);
-        } catch (\Exception $e) {
-            return back()->with('error', 'Unable to create checkout session: ' . $e->getMessage());
+        if (empty($priceId)) {
+            return back()->with('error', 'Stripe Pro price ID is not configured.');
         }
+
+        return $request->user()->newSubscription('default', $priceId)
+            ->checkout([
+                'success_url' => route('subscription.success').'?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('pricing'),
+            ]);
     }
 
     public function success(Request $request)
@@ -30,42 +28,6 @@ class SubscriptionController
 
     public function billing(Request $request)
     {
-        $user = Auth::user();
-
-        if (!$user->stripe_id) {
-            return redirect()->route('pricing');
-        }
-
-        try {
-            $url = $this->stripe->createBillingPortalSession($user);
-
-            return redirect($url);
-        } catch (\Exception $e) {
-            return back()->with('error', 'Unable to access billing portal: ' . $e->getMessage());
-        }
-    }
-
-    public function webhook(Request $request)
-    {
-        $payload = $request->all();
-        $sigHeader = $request->header('Stripe-Signature');
-        $secret = config('services.stripe.webhook_secret');
-
-        if ($secret) {
-            try {
-                $event = \Stripe\Webhook::constructEvent(
-                    $request->getContent(),
-                    $sigHeader,
-                    $secret
-                );
-                $payload = $event->toArray();
-            } catch (\Exception $e) {
-                return response()->json(['error' => 'Invalid signature'], 400);
-            }
-        }
-
-        $this->stripe->handleWebhook($payload);
-
-        return response()->json(['status' => 'success']);
+        return $request->user()->redirectToBillingPortal(route('pricing'));
     }
 }
