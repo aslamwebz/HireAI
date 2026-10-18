@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreResumeRequest;
 use App\Http\Requests\UpdateResumeRequest;
 use App\Models\Resume;
+use App\Models\UsageRecord;
 use App\Services\AiService;
 use App\Services\ResumeBuilder;
 use App\Services\ResumeParser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 
 class ResumeController extends Controller
@@ -199,11 +201,36 @@ class ResumeController extends Controller
     {
         $this->authorize('update', $resume);
 
+        $user = $request->user();
+
+        $key = 'ai_optimize:'.$user->id;
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            return response()->json([
+                'message' => "Too many optimization requests. Please try again in {$seconds} seconds.",
+            ], 429);
+        }
+
+        if (! $user->isPro() && ! UsageRecord::canUse($user, 'resume_optimize', 5)) {
+            return response()->json([
+                'message' => 'You have reached your monthly resume optimization limit. Upgrade to Pro for unlimited optimizations.',
+            ], 403);
+        }
+
         $request->validate([
             'job_description' => 'nullable|string',
         ]);
 
-        $aiService = new AiService($request->user());
+        $aiService = new AiService($user);
+
+        if (! $aiService->isConfigured()) {
+            return response()->json([
+                'message' => 'AI is not configured. Please configure your AI settings first.',
+            ], 422);
+        }
+
+        RateLimiter::hit($key, 60);
 
         $result = $aiService->optimizeResume(
             $resume->content,
@@ -212,6 +239,8 @@ class ResumeController extends Controller
 
         $resume->bumpVersion('AI Resume Optimization', 'ai_optimize', $result['optimization_notes']);
         $resume->update(['content' => $result['content']]);
+
+        UsageRecord::incrementUsage($user, 'resume_optimize');
 
         return response()->json([
             'message' => 'Resume optimized successfully.',
@@ -224,11 +253,36 @@ class ResumeController extends Controller
     {
         $this->authorize('update', $resume);
 
+        $user = $request->user();
+
+        $key = 'ai_optimize:'.$user->id;
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            return response()->json([
+                'message' => "Too many optimization requests. Please try again in {$seconds} seconds.",
+            ], 429);
+        }
+
+        if (! $user->isPro() && ! UsageRecord::canUse($user, 'resume_optimize', 5)) {
+            return response()->json([
+                'message' => 'You have reached your monthly resume optimization limit. Upgrade to Pro for unlimited optimizations.',
+            ], 403);
+        }
+
         $request->validate([
             'job_description' => 'required|string',
         ]);
 
-        $aiService = new AiService($request->user());
+        $aiService = new AiService($user);
+
+        if (! $aiService->isConfigured()) {
+            return response()->json([
+                'message' => 'AI is not configured. Please configure your AI settings first.',
+            ], 422);
+        }
+
+        RateLimiter::hit($key, 60);
 
         $result = $aiService->optimizeResumeForAts(
             $resume->content,
@@ -237,6 +291,8 @@ class ResumeController extends Controller
 
         $resume->bumpVersion('ATS Optimization', 'ats_optimize', $result['optimization_notes']);
         $resume->update(['content' => $result['content']]);
+
+        UsageRecord::incrementUsage($user, 'resume_optimize');
 
         return response()->json([
             'message' => 'Resume optimized for ATS successfully.',

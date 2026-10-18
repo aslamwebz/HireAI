@@ -18,7 +18,7 @@ class ResumeBuilder
 
         $pdf = DomPDF::loadView($template, $data);
         $pdf->setPaper('a4');
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('defaultFont', 'sans-serif');
 
@@ -35,7 +35,7 @@ class ResumeBuilder
 
         $pdf = DomPDF::loadView($template, $data);
         $pdf->setPaper('a4');
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('defaultFont', 'sans-serif');
 
@@ -52,7 +52,7 @@ class ResumeBuilder
 
         $pdf = DomPDF::loadView($template, $data);
         $pdf->setPaper('a4');
-        $pdf->setOption('isRemoteEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('defaultFont', 'sans-serif');
 
