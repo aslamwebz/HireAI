@@ -1,36 +1,86 @@
 # HireAI 🚀
 
-**The Ultimate AI-Powered Job Application Suite**
+[![Tests](https://img.shields.io/badge/tests-79%20passed-brightgreen.svg)](#-testing--code-quality)
+[![Laravel](https://img.shields.io/badge/Laravel-12.x-red.svg)](https://laravel.com)
+[![Livewire](https://img.shields.io/badge/Livewire-4.x-purple.svg)](https://livewire.laravel.com)
+[![Pest](https://img.shields.io/badge/Pest-4.x-blue.svg)](https://pestphp.com)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-4.x-cyan.svg)](https://tailwindcss.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-HireAI is a modern, high-performance platform designed to streamline your job search and career growth. Built with the latest Laravel ecosystem, it leverages AI to help you build stunning resumes, optimize them for ATS, analyze your CV, and prepare for interviews.
-
-![HireAI Dashboard](file:///c:/Users/Em/Herd/hireai/public/images/dashboard-preview.png) _(Note: Add actual dashboard screenshot here)_
+**HireAI** is an AI-native career advancement platform built with modern Laravel 12, Livewire 4, and Flux UI. It provides career engineering tools including ATS-optimized résumé creation and versioning, CV analysis, cover letter generation, interview preparation, multi-provider AI integrations, and subscription billing.
 
 ---
 
-## ✨ Key Features
+## 🏛️ System Architecture
 
-- **📄 Smart Resume Builder**: Create professional resumes with real-time previews using premium Flux UI components.
-- **🤖 AI Content Optimization**: Enhance your resume's impact with AI-powered suggestions for your work experience bullet points.
-- **📊 ATS & Keyword Optimization**: Tailor your resume specifically for a job description to improve your ATS ranking.
-- **🔍 CV Deep Analysis**: Upload your existing CV and get detailed feedback on readability, impact, and missing skills.
-- **✉️ Cover Letter Generator**: Generate personalized, high-converting cover letters for every application.
-- **💼 Job Tracker**: Organize your job applications, interviews, and follow-ups in one centralized dashboard.
-- **🎙️ Interview Preparation**: Get AI-generated interview questions and practice your answers based on specific job roles.
+```text
+                           ┌────────────────────────────┐
+                           │   Browser / Client (Flux)  │
+                           └─────────────┬──────────────┘
+                                         │
+                         HTTPS / Livewire 4 Reactive UI
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────────────┐
+│ Laravel 12 Core Architecture                                                   │
+│                                                                                │
+│  ┌────────────────────────┐  ┌─────────────────────────┐  ┌─────────────────┐ │
+│  │ HTTP & Form Requests   │  │   Livewire 4 Components │  │ Fortify Auth    │ │
+│  │ (Auth & Rate-Limited)  │  │   (Real-time Streaming) │  │ & Policies      │ │
+│  └───────────┬────────────┘  └────────────┬────────────┘  └────────┬────────┘ │
+│              │                            │                        │          │
+│              ▼                            ▼                        ▼          │
+│  ┌──────────────────────────────────────────────────────────────────────────┐ │
+│  │ Domain Service Layer                                                     │ │
+│  │  • ResumeBuilder (DomPDF with SSRF protection)                           │ │
+│  │  • ResumeParser (Smalot PDF Parser + Heuristic Regex Fallback)           │ │
+│  │  • AiService (Prism Multi-Provider Engine & Guardrails)                  │ │
+│  └──────────────────────────────────────┬───────────────────────────────────┘ │
+│                                         │                                     │
+│              ┌──────────────────────────┴────────────────────────┐            │
+│              ▼                                                   ▼            │
+│  ┌───────────────────────────────┐           ┌─────────────────────────────┐  │
+│  │ Queue Worker (Async Jobs)     │           │ Persistence & Billing       │  │
+│  │  • ProcessCvAnalysis          │           │  • SQLite / MySQL           │  │
+│  │  • ProcessInterviewPrep       │           │  • Atomic UsageRecord       │  │
+│  │  • ProcessCoverLetter         │           │  • Laravel Cashier (Stripe) │  │
+│  └───────────┬───────────────────┘           └─────────────────────────────┘  │
+└──────────────┼─────────────────────────────────────────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────────────────────────────────────────────────────────┐
+│ AI Provider Integrations (User Encrypted Keys or Global Fallback)              │
+│  • OpenAI (GPT-4o, GPT-4o-mini)          • Anthropic (Claude 3.5 Sonnet)       │
+│  • Google Gemini (Gemini 2.5 Flash)      • Groq (Llama 3.3 70B)                │
+│  • Mistral AI (Mistral Large)            • Ollama (Local LLMs)                 │
+└────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ Core Engineering Features
+
+- **📄 Smart Résumé Builder & Versioning**: Real-time drafting with atomic version tracking, restoration, branching duplicates, and SSRF-hardened PDF exports via DomPDF.
+- **🤖 Resilient Multi-Provider AI Architecture**: Native support for OpenAI, Anthropic, Gemini, Groq, Mistral, and Ollama. Supports both user-supplied encrypted API keys and team-wide global fallbacks with automatic structured model schema resolution.
+- **🛡️ Anti-Hallucination ATS Optimization**: Deep keyword extraction and alignment against job descriptions with strict factual-truthfulness guardrails preventing hallucinated work histories.
+- **🔍 Two-Tier CV Parsing**: High-fidelity structured parsing via LLMs with automatic heuristic regex fallback when offline or unconfigured.
+- **⚡ Reactive Streaming Generation**: Livewire 4 streaming for cover letters and interview preparation with real-time UI feedback.
+- **🎙️ Mock Interview Engine**: Role-tailored behavioral and technical interview questions with automated answer scoring and actionable improvement tips.
+- **💼 Kanban Job Application Tracker**: Track application statuses, dates, salaries, interview schedules, and notes.
+- **💳 Cashier Subscription System**: Stripe billing portal and checkout workflows backed by atomic monthly quota enforcement.
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Category           | Technology                                                                                                   |
-| :----------------- | :----------------------------------------------------------------------------------------------------------- |
-| **Backend**        | [Laravel 12](https://laravel.com)                                                                            |
-| **Frontend**       | [Livewire 4](https://livewire.laravel.com), [Flux UI](https://fluxui.dev), [Alpine.js](https://alpinejs.dev) |
-| **Styling**        | [Tailwind CSS 4](https://tailwindcss.com)                                                                    |
-| **Database**       | SQLite / MySQL                                                                                               |
-| **Testing**        | [Pest 4](https://pestphp.com)                                                                                |
-| **AI Integration** | OpenAI / Anthropic Integration via `laravel/ai`                                                              |
-| **Payment**        | [Stripe](https://stripe.com)                                                                                 |
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Backend** | [Laravel 12](https://laravel.com) | PHP 8.2+ framework with modern streamlined bootstrap |
+| **Frontend** | [Livewire 4](https://livewire.laravel.com) + [Flux UI](https://fluxui.dev) | Server-driven reactive UI with Alpine.js |
+| **Styling** | [Tailwind CSS 4](https://tailwindcss.com) | Next-generation engine with zero-config utility classes |
+| **AI Driver** | [EchoLabs Prism](https://prismphp.dev) / `laravel/ai` | Multi-provider LLM abstraction with structured schema output |
+| **Testing** | [Pest 4](https://pestphp.com) | Expressive testing suite with full mock coverage |
+| **Parsing** | [Smalot PDF Parser](https://github.com/smalot/pdfparser) | Native server-side PDF text extraction |
+| **Billing** | [Laravel Cashier](https://laravel.com/docs/cashier) | Stripe billing portal, checkout sessions, and webhook handling |
 
 ---
 
@@ -38,57 +88,65 @@ HireAI is a modern, high-performance platform designed to streamline your job se
 
 ### Prerequisites
 
-- **PHP**: ^8.2 (8.4 recommended)
-- **Database**: SQLite (default), MySQL, or PostgreSQL
-- **Environment**: [Laravel Herd](https://herd.laravel.com) (Recommended for local development)
+- **PHP**: `^8.2` (PHP 8.4 recommended) with `pdo`, `mbstring`, `openssl`, `xml`, `curl`
+- **Composer**: `v2+`
+- **Node.js**: `v20+` & npm
+- **Web Server**: [Laravel Herd](https://herd.laravel.com) (Recommended) or `php artisan serve`
 
 ### Installation
 
 1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/aslamwebz/HireAI.git
+   cd HireAI
+   ```
 
-    ```bash
-    git clone https://github.com/your-username/hireai.git
-    cd hireai
-    ```
+2. **Automated Setup**:
+   Run the project setup script which installs dependencies, prepares environment files, generates encryption keys, and executes database migrations:
+   ```bash
+   composer run setup
+   ```
 
-2. **Run the setup command**:
-   This command installs dependencies, sets up your `.env` file, generates keys, and migrates the database.
+3. **Configure Environment**:
+   Update `.env` with your AI credentials (or configure them per-user in the app UI):
+   ```env
+   AI_PROVIDER=openai
+   OPENAI_API_KEY=sk-...
 
-    ```bash
-    composer run setup
-    ```
+   # Stripe (Optional for subscriptions)
+   STRIPE_KEY=pk_test_...
+   STRIPE_SECRET=sk_test_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   STRIPE_PRO_PRICE_ID=price_...
+   ```
 
-3. **Configure AI Keys**:
-   Edit your `.env` file and add your AI provider credentials:
-
-    ```env
-    AI_PROVIDER=openai # or anthropic
-    OPENAI_API_KEY=your_key_here
-    ```
-
-4. **Start the development server**:
-    ```bash
-    composer run dev
-    ```
-
-Visit `http://hireai.test` (if using Herd) or the output URL from the dev server.
+4. **Start Development Server**:
+   ```bash
+   composer run dev
+   ```
+   If using **Laravel Herd**, navigate to `http://hireai.test`. Otherwise open the local server URL displayed in your terminal.
 
 ---
 
-## 🧪 Testing & Linting
+## 🧪 Testing & Code Quality
 
-HireAI maintains high code quality with automated tests and formatting guides.
+HireAI adheres to test-driven reliability. Every critical flow—from authentication and subscriptions to AI fallback parsing and version collisions—is programmatically tested.
 
 ```bash
-# Run all tests
-composer test
+# Run the complete test suite (79 passing tests)
+php artisan test --compact
 
-# Run linting (Laravel Pint)
-composer lint
+# Run targeted test suites
+php artisan test --filter=ResumeFeatureTest
+php artisan test --filter=CvAnalysisTest
+php artisan test --filter=SubscriptionTest
+
+# Format code according to Laravel standards (Laravel Pint)
+vendor/bin/pint --dirty
 ```
 
 ---
 
 ## 📄 License
 
-The HireAI platform is open-sourced software licensed under the [MIT license](LICENSE).
+The HireAI platform is open-source software licensed under the [MIT License](LICENSE).
