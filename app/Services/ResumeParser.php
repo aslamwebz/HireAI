@@ -35,8 +35,38 @@ class ResumeParser
             return [];
         }
 
-        $aiService = app(AiService::class, ['user' => auth()->user()]);
-        return $aiService->extractProfileFromText($text);
+        $user = auth()->user();
+        if ($user) {
+            $aiService = app(AiService::class, ['user' => $user]);
+            if ($aiService->isConfigured()) {
+                try {
+                    return $aiService->extractProfileFromText($text);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('AI profile extraction failed, falling back to heuristic parsing', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        return $this->extractProfileDataLocally($text);
+    }
+
+    public function extractProfileDataLocally(string $text): array
+    {
+        $lines = array_filter(array_map('trim', explode("\n", $text)));
+
+        return [
+            'personal' => $this->extractPersonalInfo($lines, $text),
+            'professional_summary' => $this->extractSummary($text),
+            'social_links' => $this->extractSocialLinks($text),
+            'work_experience' => $this->extractWorkExperience($text),
+            'education' => $this->extractEducation($text),
+            'skills' => $this->extractSkills($text),
+            'certifications' => $this->extractCertifications($text),
+            'languages' => $this->extractLanguages($text),
+            'awards' => $this->extractAwards($text),
+        ];
     }
 
     protected function extractPersonalInfo(array $lines, string $text): array
@@ -76,7 +106,7 @@ class ResumeParser
             if (! in_array($domain, ['linkedin.com', 'github.com', 'twitter.com', 'x.com'])) {
                 $data['website'] = $matches[0];
                 if (! str_starts_with($data['website'], 'http')) {
-                    $data['website'] = 'https://' . $data['website'];
+                    $data['website'] = 'https://'.$data['website'];
                 }
             }
         }
@@ -116,9 +146,9 @@ class ResumeParser
         $domains = Arr::wrap($domains);
 
         foreach ($domains as $domain) {
-            $pattern = '/https?:\/\/(?:www\.)?' . preg_quote($domain, '/') . '([a-zA-Z0-9_-]+)/i';
+            $pattern = '/https?:\/\/(?:www\.)?'.preg_quote($domain, '/').'([a-zA-Z0-9_-]+)/i';
             if (preg_match($pattern, $text, $matches)) {
-                return 'https://' . $domain . $matches[1];
+                return 'https://'.$domain.$matches[1];
             }
         }
 
