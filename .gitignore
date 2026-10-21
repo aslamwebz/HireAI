@@ -22,3 +22,13 @@ yarn-error.log
 /.vscode
 /.zed
 /storage/framework/lsp-*.php
+
+# AI tooling
+/.claude
+/.cursor
+/.junie
+/.opencode
+/opencode.json
+/.mcp.json
+/CLAUDE.md
+/AGENTS.md
