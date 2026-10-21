@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\JobApplication;
 use App\Models\InterviewPrep;
 use App\Models\InterviewQuestion;
+use App\Models\JobApplication;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class InterviewPrepSeeder extends Seeder
@@ -13,7 +13,9 @@ class InterviewPrepSeeder extends Seeder
     public function run(): void
     {
         $user = User::first();
-        if (!$user) return;
+        if (! $user) {
+            return;
+        }
 
         $jobs = JobApplication::where('user_id', $user->id)
             ->whereIn('company', ['Stripe', 'Airbnb'])
@@ -43,8 +45,8 @@ class InterviewPrepSeeder extends Seeder
                         'user_answer' => 'I would use Redis because it is very fast. I would implement a sliding window counter approach where every request increments a counter in Redis with an expiration time. If the counter exceeds the limit, I return an HTTP 429 Too Many Requests error.',
                         'ai_feedback' => 'Solid technical choice with Redis and the sliding window algorithm. It directly answers the prompt. Expanding on race conditions during the increment step (e.g., using Redis INCR or Lua scripts) would make this a completely senior-level answer.',
                         'score' => 92,
-                    ]
-                ]
+                    ],
+                ],
             ],
             'Airbnb' => [
                 'focus_area' => 'behavioral',
@@ -66,9 +68,9 @@ class InterviewPrepSeeder extends Seeder
                         'user_answer' => 'While building the e-commerce platform, the client changed the payment gateway from Stripe to PayPal at the last minute. I had to quickly read the PayPal docs, abstract the payment logic into an interface, and swap the implementation. We still met the deadline.',
                         'ai_feedback' => 'Excellent example. Abstracting the logic into an interface demonstrates strong software design principles (Dependency Inversion). Keep this exact answer for the real interview.',
                         'score' => 95,
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
 
         foreach ($preps as $company => $prepData) {

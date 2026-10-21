@@ -1,13 +1,12 @@
 <?php
 
 use App\Models\User;
-use App\Models\JobApplication;
 use Livewire\Livewire;
+use Prism\Prism\Enums\FinishReason;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Text\Response as TextResponse;
-use Prism\Prism\ValueObjects\Usage;
 use Prism\Prism\ValueObjects\Meta;
-use Prism\Prism\Enums\FinishReason;
+use Prism\Prism\ValueObjects\Usage;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -41,7 +40,7 @@ test('interview prep streams and parses markdown numbered lists', function () {
             meta: new Meta('fake', 'fake'),
             messages: collect([]),
             additionalContent: []
-        )
+        ),
     ]);
 
     Livewire::actingAs($this->user)
@@ -54,10 +53,10 @@ test('interview prep streams and parses markdown numbered lists', function () {
         ->assertSet('status', 'ready');
 
     $this->assertDatabaseHas('interview_questions', [
-        'question' => 'What is Laravel?'
+        'question' => 'What is Laravel?',
     ]);
 
     $this->assertDatabaseHas('interview_questions', [
-        'question' => 'How does Livewire work?'
+        'question' => 'How does Livewire work?',
     ]);
 });

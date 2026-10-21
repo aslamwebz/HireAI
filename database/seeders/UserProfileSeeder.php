@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Resume;
 use App\Models\User;
 use App\Models\UserProfile;
-use App\Models\Resume;
 use Illuminate\Database\Seeder;
 
 class UserProfileSeeder extends Seeder
@@ -13,7 +13,7 @@ class UserProfileSeeder extends Seeder
     {
         $user = User::first();
 
-        if (!$user) {
+        if (! $user) {
             return;
         }
 
@@ -54,7 +54,7 @@ class UserProfileSeeder extends Seeder
                         'end_date' => '2021-02',
                         'current' => false,
                         'description' => "• Built responsive and interactive UIs using React and Redux for 10+ client projects.\n• Integrated third-party APIs (Stripe, Twilio, SendGrid) to enhance application functionality.\n• Optimized database queries, reducing average load times by 25%.",
-                    ]
+                    ],
                 ],
                 'education' => [
                     [
@@ -65,8 +65,8 @@ class UserProfileSeeder extends Seeder
                         'start_date' => '2014-08',
                         'end_date' => '2018-05',
                         'current' => false,
-                        'description' => "Graduated with Honors. Coursework included Data Structures, Algorithms, Database Management, and Artificial Intelligence.",
-                    ]
+                        'description' => 'Graduated with Honors. Coursework included Data Structures, Algorithms, Database Management, and Artificial Intelligence.',
+                    ],
                 ],
                 'skills' => [
                     'JavaScript (ES6+)',
@@ -83,7 +83,7 @@ class UserProfileSeeder extends Seeder
                     'Docker',
                     'AWS',
                     'Git',
-                    'Agile/Scrum'
+                    'Agile/Scrum',
                 ],
                 'certifications' => [
                     [
@@ -92,20 +92,20 @@ class UserProfileSeeder extends Seeder
                         'issuer' => 'Amazon Web Services',
                         'date' => '2022-05',
                         'url' => 'https://aws.amazon.com/certification/',
-                    ]
+                    ],
                 ],
                 'languages' => [
                     ['name' => 'English', 'proficiency' => 'Native'],
-                    ['name' => 'Mandarin', 'proficiency' => 'Fluent']
+                    ['name' => 'Mandarin', 'proficiency' => 'Fluent'],
                 ],
                 'projects' => [
                     [
                         'id' => 'proj1',
                         'name' => 'E-commerce Platform',
                         'description' => 'Built a high-performance e-commerce platform using Laravel and Vue.js with Stripe integration, processing over $100k in monthly transactions.',
-                        'url' => 'https://github.com/alexchen/eco-platform'
-                    ]
-                ]
+                        'url' => 'https://github.com/alexchen/eco-platform',
+                    ],
+                ],
             ]
         );
 

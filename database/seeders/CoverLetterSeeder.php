@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\JobApplication;
 use App\Models\CoverLetter;
+use App\Models\JobApplication;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class CoverLetterSeeder extends Seeder
@@ -12,7 +12,9 @@ class CoverLetterSeeder extends Seeder
     public function run(): void
     {
         $user = User::first();
-        if (!$user) return;
+        if (! $user) {
+            return;
+        }
 
         $jobs = JobApplication::where('user_id', $user->id)
             ->whereIn('company', ['Stripe', 'Airbnb', 'Linear', 'Spotify'])
@@ -37,7 +39,7 @@ class CoverLetterSeeder extends Seeder
             'Airbnb' => [
                 'tone' => 'friendly',
                 'content' => "Hello Airbnb Hosting Team,\n\nAs an avid traveler and occasional host, I've seen firsthand how Airbnb's platform empowers people worldwide. I'm excited to apply for the Full Stack Engineer position to help build the tools that make hosting seamless.\n\nWhat I bring is a true full-stack perspective. Whether it's architecting a robust database schema for a new feature or polishing a React component until the user experience is flawless, I thrive on taking ownership of the entire product lifecycle. My recent work involved building complex dashboards and operational tools, which I believe maps directly to the challenges faced by the Hosting team.\n\nI'd be incredibly excited to bring my skills to Airbnb and help support the global hosting community.\n\nBest regards,\nAlex Chen",
-            ]
+            ],
         ];
 
         foreach ($jobs as $company => $job) {

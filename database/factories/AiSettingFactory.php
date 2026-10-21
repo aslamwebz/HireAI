@@ -10,7 +10,7 @@ class AiSettingFactory extends Factory
     {
         return [
             'provider' => 'groq',
-            'api_key' => 'test-api-key-' . fake()->uuid(),
+            'api_key' => 'test-api-key-'.fake()->uuid(),
             'model' => 'llama-3.3-70b-versatile',
             'is_configured' => true,
         ];

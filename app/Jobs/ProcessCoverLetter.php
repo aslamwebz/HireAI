@@ -14,6 +14,7 @@ class ProcessCoverLetter implements ShouldQueue
     use Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 180;
 
     public function __construct(public CoverLetter $coverLetter) {}
@@ -26,12 +27,13 @@ class ProcessCoverLetter implements ShouldQueue
         try {
             $aiService = new AiService($coverLetter->user);
 
-            if (!$aiService->isConfigured()) {
+            if (! $aiService->isConfigured()) {
                 $coverLetter->update([
                     'status' => 'failed',
                     'error_message' => 'AI is not configured. Please configure your AI settings first.',
                     'content' => 'Configuration Error.',
                 ]);
+
                 return;
             }
 

@@ -14,6 +14,7 @@ class ProcessCvAnalysis implements ShouldQueue
     use Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 180;
 
     public function __construct(public CvAnalysis $analysis) {}
@@ -26,12 +27,13 @@ class ProcessCvAnalysis implements ShouldQueue
         try {
             $aiService = new AiService($analysis->user);
 
-            if (!$aiService->isConfigured()) {
+            if (! $aiService->isConfigured()) {
                 $analysis->update([
                     'status' => 'failed',
                     'error_message' => 'AI is not configured. Please configure your AI settings first.',
                     'full_analysis' => 'Configuration Error.',
                 ]);
+
                 return;
             }
 

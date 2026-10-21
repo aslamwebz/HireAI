@@ -4,18 +4,18 @@ use App\Livewire\ResumeBuilder;
 use App\Models\Resume;
 use App\Models\User;
 use Livewire\Livewire;
+use Prism\Prism\Enums\FinishReason;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Structured\Response as StructuredResponse;
-use Prism\Prism\ValueObjects\Usage;
 use Prism\Prism\ValueObjects\Meta;
-use Prism\Prism\Enums\FinishReason;
+use Prism\Prism\ValueObjects\Usage;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->resume = Resume::factory()->create(['user_id' => $this->user->id, 'content' => [
         'work_experience' => [
-            ['company' => 'Old Co', 'position' => 'Dev', 'highlights' => ['Wrote code']]
-        ]
+            ['company' => 'Old Co', 'position' => 'Dev', 'highlights' => ['Wrote code']],
+        ],
     ]]);
     $this->actingAs($this->user);
 });
@@ -57,13 +57,13 @@ it('can suggest highlight improvements with AI', function () {
                 'improvements' => [
                     'Engineered scalable systems using PHP',
                     'Architected high-performance APIs',
-                    'Led development of cloud-native apps'
-                ]
+                    'Led development of cloud-native apps',
+                ],
             ],
             finishReason: FinishReason::Stop,
             usage: new Usage(0, 0),
             meta: new Meta('fake', 'fake')
-        )
+        ),
     ]);
 
     Livewire::test(ResumeBuilder::class, ['resumeId' => $this->resume->id])

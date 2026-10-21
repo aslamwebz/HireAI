@@ -1,14 +1,13 @@
 <?php
 
-use App\Models\User;
 use App\Models\JobApplication;
-use App\Models\CoverLetter;
+use App\Models\User;
 use Livewire\Livewire;
+use Prism\Prism\Enums\FinishReason;
 use Prism\Prism\Facades\Prism;
 use Prism\Prism\Text\Response as TextResponse;
-use Prism\Prism\ValueObjects\Usage;
 use Prism\Prism\ValueObjects\Meta;
-use Prism\Prism\Enums\FinishReason;
+use Prism\Prism\ValueObjects\Usage;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -45,7 +44,7 @@ test('cover letter generation streams successfully', function () {
             meta: new Meta('fake', 'fake'),
             messages: collect([]),
             additionalContent: []
-        )
+        ),
     ]);
 
     Livewire::actingAs($this->user)

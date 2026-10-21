@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\JobApplication;
-use Illuminate\Database\Seeder;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class JobApplicationSeeder extends Seeder
 {
@@ -13,7 +13,7 @@ class JobApplicationSeeder extends Seeder
     {
         $user = User::first();
 
-        if (!$user) {
+        if (! $user) {
             return;
         }
 
@@ -21,7 +21,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Stripe',
                 'position' => 'Senior Backend Engineer',
-                'job_description' => "We are looking for a Senior Backend Engineer to join our payments platform team. You will be responsible for designing, building, and maintaining APIs that thousands of businesses rely on. Requirements: 5+ years of backend development experience, strong knowledge of SQL databases, experience with distributed systems. Familiarity with Ruby or Java is a plus but not strictly required.",
+                'job_description' => 'We are looking for a Senior Backend Engineer to join our payments platform team. You will be responsible for designing, building, and maintaining APIs that thousands of businesses rely on. Requirements: 5+ years of backend development experience, strong knowledge of SQL databases, experience with distributed systems. Familiarity with Ruby or Java is a plus but not strictly required.',
                 'job_url' => 'https://stripe.com/jobs/backend-engineer',
                 'status' => 'interview',
                 'priority' => 3,
@@ -35,7 +35,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Vercel',
                 'position' => 'Frontend Architect',
-                'job_description' => "Vercel is seeking a Frontend Architect to help build the future of the web. In this role, you will lead the technical direction of our core dashboard, working closely with product and design. You should have deep expertise in React, Next.js, and modern CSS. You must have a strong portfolio demonstrating complex UI development.",
+                'job_description' => 'Vercel is seeking a Frontend Architect to help build the future of the web. In this role, you will lead the technical direction of our core dashboard, working closely with product and design. You should have deep expertise in React, Next.js, and modern CSS. You must have a strong portfolio demonstrating complex UI development.',
                 'job_url' => 'https://vercel.com/careers/frontend-architect',
                 'status' => 'wishlist',
                 'priority' => 3,
@@ -49,7 +49,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Google',
                 'position' => 'Software Engineer III',
-                'job_description' => "Join Google Cloud to build highly scalable infrastructure services. Requirements: BA/BS degree in Computer Science, 3+ years of experience in Java, C++, or Go. Experience with cloud computing platforms and microservices.",
+                'job_description' => 'Join Google Cloud to build highly scalable infrastructure services. Requirements: BA/BS degree in Computer Science, 3+ years of experience in Java, C++, or Go. Experience with cloud computing platforms and microservices.',
                 'job_url' => 'https://careers.google.com/jobs/results/',
                 'status' => 'rejected',
                 'priority' => 2,
@@ -77,7 +77,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Spotify',
                 'position' => 'Backend Engineer - Personalization',
-                'job_description' => "Work on the backend algorithms and data pipelines that power Discover Weekly and personalized home screens. Tech stack: Java, Python, GCP, BigTable.",
+                'job_description' => 'Work on the backend algorithms and data pipelines that power Discover Weekly and personalized home screens. Tech stack: Java, Python, GCP, BigTable.',
                 'job_url' => 'https://lifeatspotify.com/jobs/',
                 'status' => 'offer',
                 'priority' => 3,
@@ -105,7 +105,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'GitHub',
                 'position' => 'Staff Software Engineer, Actions',
-                'job_description' => "Lead engineering efforts on GitHub Actions. Help scale the largest CI/CD platform in the world. Deep knowledge of containers, orchestrators, and Go/Ruby required.",
+                'job_description' => 'Lead engineering efforts on GitHub Actions. Help scale the largest CI/CD platform in the world. Deep knowledge of containers, orchestrators, and Go/Ruby required.',
                 'job_url' => 'https://github.com/about/careers',
                 'status' => 'wishlist',
                 'priority' => 1,
@@ -119,7 +119,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Linear',
                 'position' => 'Product Engineer',
-                'job_description' => "Craft the future of issue tracking. We care deeply about craft, performance, and UI/UX. Tech stack: TypeScript, React, Node.js, GraphQL, PostgreSQL.",
+                'job_description' => 'Craft the future of issue tracking. We care deeply about craft, performance, and UI/UX. Tech stack: TypeScript, React, Node.js, GraphQL, PostgreSQL.',
                 'job_url' => 'https://linear.app/careers',
                 'status' => 'applied',
                 'priority' => 3,
@@ -133,7 +133,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Slack',
                 'position' => 'Backend Engineer, Messaging',
-                'job_description' => "Work on the core messaging infrastructure at Slack. Ensuring messages are delivered reliably at massive scale.",
+                'job_description' => 'Work on the core messaging infrastructure at Slack. Ensuring messages are delivered reliably at massive scale.',
                 'job_url' => 'https://slack.com/careers',
                 'status' => 'rejected',
                 'priority' => 2,
@@ -161,7 +161,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Shopify',
                 'position' => 'Senior Developer, Checkout',
-                'job_description' => "Help build the most converting checkout on the internet. Ruby on Rails, React, GraphQL.",
+                'job_description' => 'Help build the most converting checkout on the internet. Ruby on Rails, React, GraphQL.',
                 'job_url' => 'https://shopify.com/careers',
                 'status' => 'wishlist',
                 'priority' => 2,
@@ -175,7 +175,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Supabase',
                 'position' => 'PostgreSQL Engineer',
-                'job_description' => "Deep knowledge of PostgreSQL internals required. Help us build the open source Firebase alternative.",
+                'job_description' => 'Deep knowledge of PostgreSQL internals required. Help us build the open source Firebase alternative.',
                 'job_url' => 'https://supabase.com/careers',
                 'status' => 'applied',
                 'priority' => 3,
@@ -189,7 +189,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'OpenAI',
                 'position' => 'Full Stack Engineer, ChatGPT',
-                'job_description' => "Build the interfaces that millions use to interact with AI. Next.js, React, Node.",
+                'job_description' => 'Build the interfaces that millions use to interact with AI. Next.js, React, Node.',
                 'job_url' => 'https://openai.com/careers',
                 'status' => 'rejected',
                 'priority' => 3,
@@ -203,7 +203,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Figma',
                 'position' => 'Software Engineer, Collaboration',
-                'job_description' => "Work on the real-time collaboration engine using C++, WebAssembly, and React.",
+                'job_description' => 'Work on the real-time collaboration engine using C++, WebAssembly, and React.',
                 'job_url' => 'https://figma.com/careers',
                 'status' => 'interview',
                 'priority' => 3,
@@ -217,7 +217,7 @@ class JobApplicationSeeder extends Seeder
             [
                 'company' => 'Notion',
                 'position' => 'Product Engineer',
-                'job_description' => "Build new blocks, improve text editor performance, and craft beautiful UI. React, TypeScript.",
+                'job_description' => 'Build new blocks, improve text editor performance, and craft beautiful UI. React, TypeScript.',
                 'job_url' => 'https://notion.so/careers',
                 'status' => 'offer',
                 'priority' => 3,

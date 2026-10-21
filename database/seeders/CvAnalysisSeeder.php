@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\JobApplication;
 use App\Models\CvAnalysis;
+use App\Models\JobApplication;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class CvAnalysisSeeder extends Seeder
@@ -12,10 +12,14 @@ class CvAnalysisSeeder extends Seeder
     public function run(): void
     {
         $user = User::first();
-        if (!$user) return;
+        if (! $user) {
+            return;
+        }
 
         $jobs = JobApplication::where('user_id', $user->id)->take(10)->get();
-        if ($jobs->isEmpty()) return;
+        if ($jobs->isEmpty()) {
+            return;
+        }
 
         $profile = \App\Models\UserProfile::where('user_id', $user->id)->first();
         $cvContent = $profile ? $profile->toCvText() : 'Sample CV text';
@@ -29,8 +33,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Developed REST APIs handling significant traffic.',
-                        'improved' => 'Architected and developed high-throughput RESTful APIs serving 1M+ daily requests, improving response time by 30%.'
-                    ]
+                        'improved' => 'Architected and developed high-throughput RESTful APIs serving 1M+ daily requests, improving response time by 30%.',
+                    ],
                 ],
                 'strengths' => ['Strong database experience (MySQL/PostgreSQL)', 'Solid backend development background (7+ years)', 'API design expertise'],
                 'weaknesses' => ['Lack of specific payment gateway integration experience mentioned in recent roles.', 'Missing Ruby knowledge which is a core part of the stack.'],
@@ -43,8 +47,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Built responsive UIs with React and Redux.',
-                        'improved' => 'Engineered responsive, highly-interactive user interfaces using React, optimizing Core Web Vitals and achieving a 95+ Lighthouse score across client projects.'
-                    ]
+                        'improved' => 'Engineered responsive, highly-interactive user interfaces using React, optimizing Core Web Vitals and achieving a 95+ Lighthouse score across client projects.',
+                    ],
                 ],
                 'strengths' => ['Strong foundational JavaScript and React skills', 'Experience leading agile teams', 'Good mix of UI and API integration experience'],
                 'weaknesses' => ['Resume leans too heavily towards full-stack/backend when role is strictly frontend architect.', 'Missing direct Next.js production experience.'],
@@ -57,8 +61,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Optimized database queries, reducing average load times by 25%.',
-                        'improved' => 'Spearheaded database query optimization across core relational schemas, improving system latency by 25% for 1M+ active users.'
-                    ]
+                        'improved' => 'Spearheaded database query optimization across core relational schemas, improving system latency by 25% for 1M+ active users.',
+                    ],
                 ],
                 'strengths' => ['General backend scalability experience', 'Python and Node.js proficiency'],
                 'weaknesses' => ['No explicit GCP or Bigtable experience', 'Missing data engineering or ML systems background'],
@@ -71,8 +75,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Built an e-commerce platform using Laravel and Vue.js.',
-                        'improved' => 'Delivered a highly performant e-commerce platform utilized by 10k+ monthly visitors, driving over $100k in monthly transactions.'
-                    ]
+                        'improved' => 'Delivered a highly performant e-commerce platform utilized by 10k+ monthly visitors, driving over $100k in monthly transactions.',
+                    ],
                 ],
                 'strengths' => ['True full-stack background', 'E-commerce/B2C application experience', 'Strong architectural transition experience'],
                 'weaknesses' => ['Missing GraphQL setup experience in production', 'No Ruby on Rails, but strong MVC framework (Laravel) backgrounds translates well.'],
@@ -85,8 +89,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Migrated monolithic application to Docker.',
-                        'improved' => 'Led the containerization of a legacy monolith using Docker and orchestrated CI/CD pipelines, accelerating deployment speed by 40%.'
-                    ]
+                        'improved' => 'Led the containerization of a legacy monolith using Docker and orchestrated CI/CD pipelines, accelerating deployment speed by 40%.',
+                    ],
                 ],
                 'strengths' => ['Backend API experience', 'Mentoring junior developers'],
                 'weaknesses' => ['Missing core language requirements (Go/Rust/Ruby)', 'Insufficient infrastructure scale demonstrated compared to Staff Engineer level requirements.'],
@@ -100,8 +104,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Developed and maintained scalable RESTful APIs.',
-                        'improved' => 'Engineered production-grade RESTful and GraphQL APIs using Node.js and TypeScript, handling over 1M requests daily with 99.9% uptime.'
-                    ]
+                        'improved' => 'Engineered production-grade RESTful and GraphQL APIs using Node.js and TypeScript, handling over 1M requests daily with 99.9% uptime.',
+                    ],
                 ],
                 'strengths' => ['Full stack experience aligns perfectly with product engineering', 'Start-up mentality and agility'],
                 'weaknesses' => ['Could emphasize UI/UX collaboration more'],
@@ -114,8 +118,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Optimized database performance.',
-                        'improved' => 'Diagnosed and resolved complex database bottlenecks, implementing indexing strategies that reduced query latency by 25%.'
-                    ]
+                        'improved' => 'Diagnosed and resolved complex database bottlenecks, implementing indexing strategies that reduced query latency by 25%.',
+                    ],
                 ],
                 'strengths' => ['General CS degree with Honors', 'API scalability'],
                 'weaknesses' => ['Incorrect tech stack', 'Lacks distributed systems consensus algorithm knowledge'],
@@ -128,8 +132,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Integrated third-party APIs.',
-                        'improved' => 'Architected real-time communication features by integrating webhook-based APIs and WebSockets, reducing notification delay to under 200ms.'
-                    ]
+                        'improved' => 'Architected real-time communication features by integrating webhook-based APIs and WebSockets, reducing notification delay to under 200ms.',
+                    ],
                 ],
                 'strengths' => ['Strong Python and React foundation', 'High scale B2C application experience'],
                 'weaknesses' => ['Lacking explicit real-time systems experience on the resume'],
@@ -142,8 +146,8 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Optimized database queries, reducing average load times by 25%.',
-                        'improved' => 'Led comprehensive PostgreSQL query profiling and index optimization, reducing P99 latency by 35% for complex analytical workloads.'
-                    ]
+                        'improved' => 'Led comprehensive PostgreSQL query profiling and index optimization, reducing P99 latency by 35% for complex analytical workloads.',
+                    ],
                 ],
                 'strengths' => ['Deep relational database experience mentioned throughout', 'Strong backend architectural skills'],
                 'weaknesses' => ['Needs more explicit mention of Postgres-specific features (e.g., CTEs, materialized views)'],
@@ -156,12 +160,12 @@ class CvAnalysisSeeder extends Seeder
                 'rewritten_bullets' => [
                     [
                         'original' => 'Built responsive and interactive UIs.',
-                        'improved' => 'Developed highly performant, accessible React applications utilizing complex state management, delivering seamless user experiences across devices.'
-                    ]
+                        'improved' => 'Developed highly performant, accessible React applications utilizing complex state management, delivering seamless user experiences across devices.',
+                    ],
                 ],
                 'strengths' => ['Strong UI development background', 'Full stack understanding is valuable for AI integration'],
                 'weaknesses' => ['No explicit AI/LLM experience listed on the resume.'],
-            ]
+            ],
         ];
 
         foreach ($jobs as $index => $job) {

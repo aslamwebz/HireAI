@@ -14,7 +14,7 @@ class JobApplicationFactory extends Factory
             'job_description' => fake()->paragraphs(3, true),
             'job_url' => fake()->url(),
             'status' => 'wishlist',
-            'location' => fake()->city() . ', ' . fake()->country(),
+            'location' => fake()->city().', '.fake()->country(),
             'remote' => fake()->boolean(),
             'notes' => fake()->optional()->paragraph(),
         ];

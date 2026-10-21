@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Models\JobApplication;
 use App\Models\InterviewPrep;
+use App\Models\JobApplication;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +30,7 @@ class GenerateInterviewPrep implements ShouldQueue
         // Job description is required
         if (empty($this->job->job_description)) {
             Log::info("Skipping automated prep generation: No job description for job application {$this->job->id}");
+
             return;
         }
 
@@ -42,7 +43,7 @@ class GenerateInterviewPrep implements ShouldQueue
             'job_description' => $this->job->job_description,
             'cv_content' => $cvContent,
             'focus_area' => 'general',
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         ProcessInterviewPrep::dispatchSync($prep);

@@ -3,41 +3,56 @@
 namespace App\Livewire;
 
 use App\Models\Resume;
-use App\Models\UserProfile;
 use App\Services\AiService;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Illuminate\Support\Facades\RateLimiter;
 
 class ResumeBuilder extends Component
 {
     use WithFileUploads;
 
     public ?Resume $resume = null;
+
     public bool $isNew = true;
 
     public string $title = '';
+
     public string $template = Resume::TEMPLATE_CLASSIC;
+
     public array $content = [];
 
     public bool $showOptimizeModal = false;
+
     public string $jobDescription = '';
+
     public string $optimizationType = 'general';
+
     public string $optimizationStatus = 'idle';
+
     public string $optimizationNotes = '';
+
     public int $atsScoreBefore = 0;
+
     public int $atsScoreAfter = 0;
+
     public array $atsKeywordsAdded = [];
 
     public bool $showPreview = false;
+
     public string $activeTab = 'personal';
 
     // AI Highlight Suggestion state
     public bool $showSuggestionModal = false;
+
     public string $currentHighlight = '';
+
     public array $highlightSuggestions = [];
+
     public ?int $selectedExperienceIndex = null;
+
     public ?int $selectedHighlightIndex = null;
+
     public bool $isSuggesting = false;
 
     public function mount(?int $resumeId = null): void
@@ -66,7 +81,7 @@ class ResumeBuilder extends Component
     {
         $this->validate([
             'title' => 'required|string|max:255',
-            'template' => 'required|string|in:' . implode(',', array_keys(Resume::getTemplates())),
+            'template' => 'required|string|in:'.implode(',', array_keys(Resume::getTemplates())),
         ]);
 
         $data = [
@@ -76,7 +91,7 @@ class ResumeBuilder extends Component
         ];
 
         if ($this->isNew) {
-            $isPrimary = !auth()->user()->resumes()->exists();
+            $isPrimary = ! auth()->user()->resumes()->exists();
             $this->resume = auth()->user()->resumes()->create([
                 ...$data,
                 'is_primary' => $isPrimary,
@@ -107,11 +122,12 @@ class ResumeBuilder extends Component
             'jobDescription' => 'required|string',
         ]);
 
-        $key = 'ai_generate:' . auth()->id();
+        $key = 'ai_generate:'.auth()->id();
         if (RateLimiter::tooManyAttempts($key, 10)) {
             $seconds = RateLimiter::availableIn($key);
             $this->optimizationNotes = "Too many AI requests. Please try again in {$seconds} seconds.";
             $this->optimizationStatus = 'failed';
+
             return;
         }
 
@@ -139,7 +155,7 @@ class ResumeBuilder extends Component
             $this->optimizationStatus = 'completed';
         } catch (\Exception $e) {
             $this->optimizationStatus = 'failed';
-            session()->flash('error', 'Optimization failed: ' . $e->getMessage());
+            session()->flash('error', 'Optimization failed: '.$e->getMessage());
         }
     }
 
@@ -149,11 +165,12 @@ class ResumeBuilder extends Component
             'jobDescription' => $this->optimizationType === 'ats' ? 'required|string' : 'nullable|string',
         ]);
 
-        $key = 'ai_generate:' . auth()->id();
+        $key = 'ai_generate:'.auth()->id();
         if (RateLimiter::tooManyAttempts($key, 10)) {
             $seconds = RateLimiter::availableIn($key);
             $this->optimizationNotes = "Too many AI requests. Please try again in {$seconds} seconds.";
             $this->optimizationStatus = 'failed';
+
             return;
         }
 
@@ -168,6 +185,7 @@ class ResumeBuilder extends Component
             if ($this->optimizationType === 'ats') {
                 // Delegate to optimizeForAts if it's an ATS optimization
                 $this->optimizeForAts();
+
                 return; // optimizeForAts handles its own status and versioning
             } else {
                 $result = $aiService->optimizeResume($this->content, $this->jobDescription ?: null);
@@ -182,7 +200,7 @@ class ResumeBuilder extends Component
             $this->optimizationStatus = 'completed';
         } catch (\Exception $e) {
             $this->optimizationStatus = 'failed';
-            session()->flash('error', 'Optimization failed: ' . $e->getMessage());
+            session()->flash('error', 'Optimization failed: '.$e->getMessage());
         }
     }
 
@@ -214,7 +232,7 @@ class ResumeBuilder extends Component
 
     public function addExperience(): void
     {
-        if (!isset($this->content['work_experience'])) {
+        if (! isset($this->content['work_experience'])) {
             $this->content['work_experience'] = [];
         }
         $this->content['work_experience'][] = [
@@ -224,7 +242,7 @@ class ResumeBuilder extends Component
             'end_date' => '',
             'current' => false,
             'description' => '',
-            'highlights' => []
+            'highlights' => [],
         ];
     }
 
@@ -247,7 +265,7 @@ class ResumeBuilder extends Component
 
     public function addEducation(): void
     {
-        if (!isset($this->content['education'])) {
+        if (! isset($this->content['education'])) {
             $this->content['education'] = [];
         }
         $this->content['education'][] = [
@@ -255,7 +273,7 @@ class ResumeBuilder extends Component
             'degree' => '',
             'field_of_study' => '',
             'start_date' => '',
-            'end_date' => ''
+            'end_date' => '',
         ];
     }
 
@@ -267,7 +285,7 @@ class ResumeBuilder extends Component
 
     public function addSkill(): void
     {
-        if (!isset($this->content['skills'])) {
+        if (! isset($this->content['skills'])) {
             $this->content['skills'] = [];
         }
         $this->content['skills'][] = ['name' => '', 'level' => ''];
@@ -281,12 +299,13 @@ class ResumeBuilder extends Component
 
     public function suggestHighlights(int $experienceIndex, ?int $highlightIndex = null): void
     {
-        $key = 'ai_generate:' . auth()->id();
+        $key = 'ai_generate:'.auth()->id();
         if (RateLimiter::tooManyAttempts($key, 20)) {
             $seconds = RateLimiter::availableIn($key);
             $this->highlightSuggestions = ["Rate limit exceeded. Try again in {$seconds}s."];
             $this->showSuggestionModal = true;
             $this->isSuggesting = false; // Ensure suggesting status is reset
+
             return;
         }
 
@@ -296,6 +315,7 @@ class ResumeBuilder extends Component
 
         if (empty($this->currentHighlight)) {
             $this->showSuggestionModal = false; // Close modal if highlight is empty
+
             return;
         }
 
@@ -309,7 +329,7 @@ class ResumeBuilder extends Component
             $this->isSuggesting = false;
         } catch (\Exception $e) {
             $this->isSuggesting = false;
-            session()->flash('error', 'Suggestion failed: ' . $e->getMessage());
+            session()->flash('error', 'Suggestion failed: '.$e->getMessage());
         }
     }
 
