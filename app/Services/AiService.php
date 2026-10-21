@@ -28,11 +28,32 @@ class AiService
         $this->user = $user;
         $this->settings = $user->aiSetting;
 
-        $providerName = $this->settings?->provider ?? 'openrouter';
+        $providerName = $this->resolveProviderName();
         $this->provider = $this->mapProvider($providerName);
         $this->model = $this->settings?->model ?? $this->getDefaultModel($providerName);
 
         $this->usingGlobalConfig = ! $this->settings?->api_key;
+    }
+
+    protected function resolveProviderName(): string
+    {
+        if (! empty($this->settings?->provider)) {
+            return $this->settings->provider;
+        }
+
+        $default = config('ai.default', env('AI_PROVIDER', 'openai'));
+
+        if (! empty(config("ai.providers.{$default}.key")) || ! empty(config("prism.providers.{$default}.api_key"))) {
+            return $default;
+        }
+
+        foreach (['openai', 'anthropic', 'gemini', 'groq', 'mistral', 'openrouter'] as $candidate) {
+            if (! empty(config("ai.providers.{$candidate}.key")) || ! empty(config("prism.providers.{$candidate}.api_key"))) {
+                return $candidate;
+            }
+        }
+
+        return $default;
     }
 
     protected function mapProvider(string $provider): Provider
@@ -69,7 +90,7 @@ class AiService
             return true;
         }
 
-        $provider = $this->settings?->provider ?? 'openrouter';
+        $provider = $this->resolveProviderName();
 
         return ! empty(config("ai.providers.{$provider}.key"))
             || ! empty(config("prism.providers.{$provider}.api_key"));
@@ -83,7 +104,7 @@ class AiService
     public function getProviderConfig(): array
     {
         $config = [];
-        $providerName = $this->settings?->provider ?? 'openrouter';
+        $providerName = $this->resolveProviderName();
 
         if (! empty($this->settings?->api_key)) {
             $config['api_key'] = $this->settings->api_key;
