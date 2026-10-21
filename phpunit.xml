@@ -31,5 +31,11 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="AI_PROVIDER" value="openai"/>
+        <env name="OPENAI_API_KEY" value="sk-testing-dummy-key"/>
+        <env name="STRIPE_KEY" value="pk_test_dummy"/>
+        <env name="STRIPE_SECRET" value="sk_test_dummy"/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="whsec_dummy"/>
+        <env name="STRIPE_PRO_PRICE_ID" value="price_dummy"/>
     </php>
 </phpunit>
